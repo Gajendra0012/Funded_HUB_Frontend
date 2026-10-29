@@ -1,0 +1,67 @@
+/* Palette sampled from BUILD_SPRINT_PLAN.pdf; navy #0B2545, #13315C, blue #3E7CB1. */
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-elevated: #f8fafc;
+  --surface: #f1f5f9;
+  --surface-solid: #ffffff;
+  --border: #e2e8f0;
+  --border-strong: #b8c8d9;
+  --text: #0b2545;
+  --muted: #52647a;
+  --accent-1: #13315c;
+  --accent-2: #3e7cb1;
+  --accent-3: #0b2545;
+  --profit: #19634f;
+  --loss: #af233c;
+  --warning: #855500;
+  /* Landing signals are separate from form/admin warning colors; these meet contrast on navy. */
+  --signal-warning: #F5C46A;
+  --signal-danger: #FFB4B4;
+  --landing-tint: #A8C4DC; /* 45% brand blue / 55% white; a concrete value also works in WebGL. */
+  --landing-muted: color-mix(in srgb, var(--accent-1) 84%, var(--bg));
+  --gradient: linear-gradient(135deg, #13315c, #0b2545);
+  --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem; --space-6: 1.5rem; --space-8: 2rem;
+  --radius-control: .5rem;
+  --radius-card: 1rem;
+}
+@theme inline {
+  --color-bg: var(--bg); --color-surface: var(--surface); --color-fg: var(--text); --color-muted: var(--muted); --color-accent: var(--accent-1);
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@layer base {
+  * { box-sizing: border-box; }
+  html { background: var(--bg); color: var(--text); scroll-behavior: smooth; scroll-padding-top: 110px; }
+  body { margin: 0; min-height: 100dvh; font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  button, input { font: inherit; }
+  a { color: inherit; }
+  button:not(:disabled), summary { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  :focus-visible { outline: 3px solid #3e7cb1; outline-offset: 4px; }
+  ::selection { background: #bcd9f1; color: #0b2545; }
+  h1, h2, h3 { text-wrap: balance; }
+}
+@layer components {
+  .button { display: inline-flex; align-items: center; justify-content: center; gap: .85rem; min-height: 48px; padding: .8rem 1.35rem; border: 1px solid transparent; border-radius: var(--radius-control); font-size: .8125rem; font-weight: 600; text-decoration: none; transition: background .2s, transform .2s; }
+  .button-primary { color: #fff; background: var(--accent-1); }
+  .button-primary:hover:not(:disabled) { background: #244e7c; }
+  .button-secondary { color: var(--text); background: #fff; border-color: var(--border-strong); }
+  .button-secondary:hover:not(:disabled) { background: var(--surface); }
+  .button:disabled { opacity: .5; }
+  .card { border: 1px solid var(--border); border-radius: var(--radius-card); padding: var(--space-6); background: #fff; }
+  .badge { display: inline-flex; align-items: center; gap: var(--space-2); border: 1px solid #cedbeb; border-radius: 99px; padding: .375rem .75rem; font-size: .6875rem; font-weight: 600; letter-spacing: .06em; color: var(--accent-1); background: #f1f5f9; }
+  .field-group { display: grid; gap: var(--space-2); }
+  .field-group label { font-size: .8125rem; font-weight: 550; }
+  .field { width: 100%; min-height: 46px; padding: .75rem 1rem; border: 1px solid var(--border-strong); border-radius: var(--radius-control); color: var(--text); background: var(--bg-elevated); }
+  .field::placeholder { color: var(--muted); }
+  .field[aria-invalid="true"] { border-color: var(--loss); }
+  .field-hint, .field-error { margin: 0; font-size: .75rem; line-height: 1.6; color: var(--muted); }
+  .field-error { color: var(--loss); }
+  .spinner { width: 1rem; height: 1rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
