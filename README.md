@@ -11,7 +11,7 @@ bun install --frozen-lockfile
 bun run dev
 ```
 
-Open http://127.0.0.1:3000. The homepage is the Sellix-inspired globe landing. Shared component specimens remain at `/design-system`. No environment variables are required. The landing pairs Instrument Sans with italic Instrument Serif, downloaded at build time through next/font and served locally; background video and poster use the supplied CloudFront URLs.
+Open http://127.0.0.1:3000. The homepage is the Sellix-inspired globe landing. Shared component specimens remain at `/design-system`. No environment variables are required. The landing pairs Instrument Sans with italic Instrument Serif, downloaded at build time through next/font and served locally; background video and its matching first-frame poster are served locally from public/video.
 
 ```sh
 bun run lint

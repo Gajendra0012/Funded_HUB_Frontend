@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Instrument_Sans, Instrument_Serif } from "next/font/google";
-import { Landing } from "@/components/landing/landing";
+import { LandingExperience } from "@/components/landing/landing-experience";
 
 const sans = Instrument_Sans({ subsets: ["latin"], variable: "--font-landing-sans", display: "block" });
 const display = Instrument_Serif({ subsets: ["latin"], weight: "400", style: "italic", variable: "--font-landing-display", display: "block" });
+
+export const viewport: Viewport = { colorScheme: "dark", themeColor: "#040c19" };
 
 export const metadata: Metadata = {
   title: { absolute: "Funded HUB — Your edge. Amplified." },
@@ -11,5 +13,5 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return <Landing className={[sans.variable, display.variable].join(" ")} />;
+  return <LandingExperience className={[sans.variable, display.variable].join(" ")} />;
 }
