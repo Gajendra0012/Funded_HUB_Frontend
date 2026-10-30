@@ -1,23 +1,31 @@
 {
   "name": "funded-hub-frontend",
   "private": true,
-  "packageManager": "pnpm@10.26.0",
+  "packageManager": "bun@1.3.5",
   "engines": {
     "node": ">=24 <25"
   },
   "scripts": {
-    "dev": "pnpm --filter @funded-hub/web dev",
-    "build": "pnpm -r --if-present build",
-    "start": "pnpm --filter @funded-hub/web start",
+    "dev": "bun run --cwd apps/web dev",
+    "build": "bun run --cwd apps/web build",
+    "start": "bun run --cwd apps/web start",
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm -r --if-present test",
-    "dev:admin": "pnpm --filter @funded-hub/admin dev",
-    "start:admin": "pnpm --filter @funded-hub/admin start"
+    "typecheck": "bun run --cwd apps/web typecheck",
+    "test": "bun run --cwd apps/web test",
+    "dev:admin": "bun run --cwd apps/admin dev",
+    "start:admin": "bun run --cwd apps/admin start"
   },
   "devDependencies": {
     "eslint": "^9.39.0",
     "eslint-config-next": "16.3.8",
     "typescript": "^5.9.3"
-  }
+  },
+  "workspaces": [
+    "apps/web",
+    "packages/ui"
+  ],
+  "trustedDependencies": [
+    "sharp",
+    "unrs-resolver"
+  ]
 }
