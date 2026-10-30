@@ -16,6 +16,9 @@
   --loss: #af233c;
   --warning: #855500;
   /* Landing signals are separate from form/admin warning colors; these meet contrast on navy. */
+  /* Financial semantics are consumed only by the sample product data visuals. */
+  --data-profit: #8CE7BB;
+  --data-loss: #FFB4B4;
   --signal-warning: #F5C46A;
   --signal-danger: #FFB4B4;
   --landing-tint: #A8C4DC; /* 45% brand blue / 55% white; a concrete value also works in WebGL. */
