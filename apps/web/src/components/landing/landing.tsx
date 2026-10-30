@@ -1,122 +1,174 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { animate, motion, MotionConfig, useInView, useMotionValueEvent, useScroll } from "motion/react";
-import { useMotionPreference } from "./use-motion-preference";
-import { HeroArt } from "./hero-art";
-import { programs, riskState, sampleOpening, simulateDay, timing } from "./landing-data";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useStaticHero } from "./use-static-hero";
+import { globeAssets, startGlobePlayback } from "./video-playback";
 import styles from "./landing.module.css";
 
-function Reveal({ children, className }: { children: ReactNode; className?: string }) {
-  const reduced = useMotionPreference();
-  return <motion.div className={className} initial={false} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.15 }} style={{ y: reduced ? 0 : 12 }}>{children}</motion.div>;
+const panels = {
+  programs: {
+    label: "Programs", title: "Find your starting point.",
+    paragraphs: ["Funded HUB is being built around crypto trading challenges using simulated capital on Bybit Demo.", "Program targets, loss limits, fees, and reward eligibility will be shown before enrollment. Final program terms and enrollment are not available in this preview."],
+  },
+  process: {
+    label: "How it works", title: "Make discipline your edge.",
+    paragraphs: ["Choose a challenge and understand its objectives and risk limits. Execute your crypto trades on Bybit Demo while Funded HUB tracks your progress.", "Meet your program’s conditions and complete the required review to become eligible for profit-share rewards under the applicable terms. Simulated results do not guarantee future performance."],
+  },
+  platform: {
+    label: "Platform", title: "Crypto. On familiar ground.",
+    paragraphs: ["The planned trading experience uses Bybit Demo for simulated execution and charts, with Funded HUB providing challenge progress and account oversight.", "This design preview does not connect a Bybit account, place trades, or handle deposits."],
+  },
+  faq: {
+    label: "FAQ", title: "A little clarity.",
+    paragraphs: ["Is this live trading? No. Challenge accounts are designed to use simulated capital on Bybit Demo.", "Can I enroll or request a payout here? Not yet. This is a landing design preview; authentication, purchases, and payouts are not connected.", "Are rewards guaranteed? No. Eligibility depends on program conditions, risk compliance, and review."],
+  },
+  support: {
+    label: "Support", title: "Here for your next step.",
+    paragraphs: ["Funded HUB support channels will be listed when the platform launches.", "For now, explore how the challenge journey works. This preview does not collect contact details or send support requests."],
+  },
+  login: {
+    label: "Trader access", title: "Your trading chapter starts here.",
+    paragraphs: ["Trader login is not connected in this design preview. There is no need to enter credentials or connect a wallet.", "The planned account area will bring your challenge progress, risk limits, and reward eligibility together."],
+  },
+} as const;
+
+type Panel = keyof typeof panels;
+const navigation: Panel[] = ["programs", "process", "platform", "faq", "support"];
+
+function Arrow() {
+  return <svg className={styles.arw} viewBox="0 0 12 10" fill="none" aria-hidden="true"><path d="M0.8 5h10M7.1 1.4 10.9 5l-3.8 3.6" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 
-function Count({ value }: { value: number }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const current = useRef(value);
-  const [initial] = useState(value);
-  const visible = useInView(ref, { once: true });
-  const reduced = useMotionPreference();
+export function Landing({ className = "" }: { className?: string }) {
+  const hero = useRef<HTMLElement>(null);
+  const firstVideo = useRef<HTMLVideoElement>(null);
+  const secondVideo = useRef<HTMLVideoElement>(null);
+  const lastCta = useRef<HTMLButtonElement>(null);
+  const burger = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const staticHero = useStaticHero();
+  const [paused, setPaused] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [panel, setPanel] = useState<Panel>("programs");
+  const returnToBurger = useRef(false);
+
+  useLayoutEffect(() => {
+    const element = hero.current;
+    const finalButton = lastCta.current;
+    if (!element || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let started = false;
+    let disposed = false;
+    let safety: ReturnType<typeof setTimeout>;
+    element.dataset.entrance = "waiting";
+    function clean() { delete element!.dataset.entrance; }
+    function start() {
+      if (started || disposed) return;
+      started = true;
+      clearTimeout(ceiling);
+      element!.dataset.entrance = "running";
+      safety = setTimeout(clean, 2600);
+    }
+    const ceiling = setTimeout(start, 900);
+    void document.fonts.ready.then(start, start);
+    finalButton?.addEventListener("animationend", clean);
+    return () => {
+      disposed = true;
+      clearTimeout(ceiling);
+      clearTimeout(safety);
+      finalButton?.removeEventListener("animationend", clean);
+      clean();
+    };
+  }, []);
+
   useEffect(() => {
-    if (!visible) return;
-    if (reduced) {
-      current.current = value;
-      if (ref.current) ref.current.textContent = value.toFixed(1);
+    firstVideo.current?.load();
+    secondVideo.current?.load();
+  }, [staticHero]);
+
+  useEffect(() => {
+    const first = firstVideo.current, second = secondVideo.current;
+    if (!first || !second) return;
+    if (staticHero || paused) {
+      first.pause(); second.pause();
+      if (staticHero) {
+        first.dataset.active = "true";
+        second.dataset.active = "false";
+        try { first.currentTime = 0; } catch { /* The poster remains visible before metadata loads. */ }
+      }
       return;
     }
-    // Start from the displayed value so fast slider input interrupts smoothly instead of resetting to zero.
-    const controls = animate(current.current, value, { duration: timing.duration.short, ease: timing.ease, onUpdate: latest => {
-      current.current = latest;
-      if (ref.current) ref.current.textContent = latest.toFixed(1);
-    } });
-    return () => controls.stop();
-  }, [value, visible, reduced]);
-  return <span ref={ref}>{initial.toFixed(1)}</span>;
-}
+    return startGlobePlayback(first, second);
+  }, [staticHero, paused]);
 
-const steps = [
-  { number: "01", title: "Choose a starting point.", text: "Pick a challenge with simulated capital. Read the targets and loss limits before you begin.", note: "YOUR PROGRAM / YOUR PACE" },
-  { number: "02", title: "Trade inside the lines.", text: "Execute your crypto trades on Bybit Demo. Funded HUB keeps your challenge progress and risk limits in view.", note: "CRYPTO ONLY / BYBIT DEMO" },
-  { number: "03", title: "Make discipline count.", text: "Meet your program’s conditions and complete the required review to qualify for real profit-share payouts.", note: "SIMULATED CAPITAL / REAL PAYOUTS" },
-];
+  useEffect(() => {
+    if (!menuOpen) return;
+    function outside(event: PointerEvent) {
+      if (event.target instanceof Node && !menu.current?.contains(event.target) && !burger.current?.contains(event.target)) setMenuOpen(false);
+    }
+    function escape(event: KeyboardEvent) {
+      if (event.key === "Escape") { setMenuOpen(false); burger.current?.focus(); }
+    }
+    const desktop = window.matchMedia("(min-width: 1161px)");
+    function resize() { if (desktop.matches) setMenuOpen(false); }
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    desktop.addEventListener("change", resize);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+      desktop.removeEventListener("change", resize);
+    };
+  }, [menuOpen]);
 
-function Journey() {
-  const ref = useRef<HTMLOListElement>(null);
-  const [active, setActive] = useState(0);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start center", "end center"] });
-  useMotionValueEvent(scrollYProgress, "change", value => setActive(Math.min(2, Math.floor(value * 3))));
-  return <section className={`${styles.section} ${styles.journey}`} id="process" aria-labelledby="process-title">
-    <div className={styles.journeyHeading}><div><span className={styles.kicker}>01 / HOW IT WORKS</span><h2 id="process-title">A deliberate<br /><em>way forward.</em></h2></div><p className={styles.lead}>Three steps. One constant:<br />respect for risk.</p></div>
-    <div className={styles.journeyGrid}>
-      <div className={styles.journeyNumeral} aria-hidden="true"><span className={styles.giantNumber}>{steps[active].number}</span><span className={styles.micro}>THE PROCESS</span><div className={styles.stepDots}>{steps.map((step,index)=><span key={step.number} data-active={active===index} />)}</div></div>
-      <ol ref={ref} className={styles.steps}>{steps.map((step,index)=><li className={styles.step} key={step.number} data-active={active===index}>
-        <span className={styles.stepNumber}>{step.number}</span><h3>{step.title}</h3><p>{step.text}</p><span className={styles.micro}>{step.note}</span>
-      </li>)}</ol>
+  function openPanel(next: Panel) {
+    returnToBurger.current = menuOpen;
+    setPanel(next);
+    setMenuOpen(false);
+    dialog.current?.showModal();
+  }
+
+  return <section ref={hero} className={`${styles.hero} ${className}`} aria-labelledby="hero-title">
+    <div className={styles.bg} role="img" aria-label="A violet dot-matrix globe rotating slowly against a starfield">
+      <video ref={firstVideo} className={styles["bg-video"]} data-active="true" muted loop playsInline preload={staticHero ? "none" : "auto"} disablePictureInPicture aria-hidden="true" poster={globeAssets.poster}>
+        {!staticHero && <source src={globeAssets.video} type="video/mp4" />}
+      </video>
+      <video ref={secondVideo} className={styles["bg-video"]} data-active="false" muted loop playsInline preload={staticHero ? "none" : "auto"} disablePictureInPicture aria-hidden="true" poster={globeAssets.poster}>
+        {!staticHero && <source src={globeAssets.video} type="video/mp4" />}
+      </video>
     </div>
+    <header className={styles.nav}>
+      <Link className={styles.logo} href="/" aria-label="Funded HUB home">Funded HUB</Link>
+      <nav className={styles["nav-links"]} aria-label="Primary">{navigation.map(key => <button key={key} type="button" onClick={() => openPanel(key)} aria-haspopup="dialog">{panels[key].label}</button>)}</nav>
+      <div className={styles["nav-actions"]}>
+        <button className={`${styles.btn} ${styles["btn-login"]}`} type="button" onClick={() => openPanel("login")} aria-haspopup="dialog">Login</button>
+        <button className={`${styles.btn} ${styles["btn-nav-start"]}`} type="button" onClick={() => openPanel("programs")} aria-haspopup="dialog">Get Started <Arrow /></button>
+      </div>
+      <button ref={burger} className={styles.burger} type="button" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} aria-controls="landing-menu" onClick={() => setMenuOpen(!menuOpen)}><span /></button>
+    </header>
+    <nav ref={menu} className={`${styles.menu} ${menuOpen ? styles.open : ""}`} id="landing-menu" aria-label="Mobile">
+      {navigation.map(key => <button key={key} type="button" onClick={() => openPanel(key)} aria-haspopup="dialog">{panels[key].label}</button>)}
+      <div className={styles.divider} />
+      <button type="button" onClick={() => openPanel("login")} aria-haspopup="dialog">Login</button>
+      <button className={styles["m-start"]} type="button" onClick={() => openPanel("programs")} aria-haspopup="dialog">Get Started <Arrow /></button>
+    </nav>
+    <div className={styles["hero-inner"]}>
+      <h1 id="hero-title" className={styles.heading}><span className={styles.ln}><span className={styles["ln-i"]}>Your edge.</span></span><span className={styles.ln}><span className={styles["ln-i"]}>Amplified.</span></span></h1>
+      <p className={styles.sub}>Choose your challenge. Trade crypto on Bybit Demo.<br /> Keep your progress and risk limits in view,<br /> and build your next chapter as a trader.</p>
+      <div className={styles.ctas}>
+        <button className={`${styles.btn} ${styles["btn-lg"]} ${styles["btn-primary"]}`} type="button" onClick={() => openPanel("programs")} aria-haspopup="dialog">Get Started <Arrow /></button>
+        <button ref={lastCta} className={`${styles.btn} ${styles["btn-lg"]} ${styles["btn-ghost"]}`} type="button" onClick={() => openPanel("process")} aria-haspopup="dialog">How it works <Arrow /></button>
+      </div>
+    </div>
+    {!staticHero && <button type="button" className={styles.playback} aria-pressed={paused} onClick={() => setPaused(!paused)}>{paused ? "Play background" : "Pause background"}</button>}
+    <p className={styles.disclosure}>Simulated capital. Trading involves risk. Design preview.</p>
+    <dialog ref={dialog} className={styles.dialog} aria-labelledby="landing-dialog-title" onClose={() => { if (returnToBurger.current) burger.current?.focus(); }} onClick={event => { if (event.target === event.currentTarget) dialog.current?.close(); }}>
+      <button type="button" className={styles["dialog-close"]} aria-label="Close dialog" onClick={() => dialog.current?.close()}><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg></button>
+      <span className={styles.eyebrow}>Funded HUB / {panels[panel].label}</span>
+      <h2 id="landing-dialog-title">{panels[panel].title}</h2>
+      {panels[panel].paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+      <p className={styles["dialog-note"]}>Preview only. No live accounts, purchases, or payouts are connected.</p>
+    </dialog>
   </section>;
-}
-
-function RiskGauge() {
-  const [pnl, setPnl] = useState(sampleOpening.day);
-  const reduced = useMotionPreference();
-  const rules = simulateDay(pnl);
-  const dailyState = riskState(rules[1].value, rules[1].limit);
-  const drawdownState = riskState(rules[2].value, rules[2].limit);
-  const state = dailyState === "breach" || drawdownState === "breach" ? "breach" : dailyState === "warning" || drawdownState === "warning" ? "warning" : "safe";
-  const status = state === "breach" ? "Rule breached" : state === "warning" ? dailyState === "warning" ? "Close to daily limit" : "Close to drawdown limit" : "Within limits";
-  const signed = `${pnl > 0 ? "+" : ""}${pnl.toFixed(1)}%`;
-  return <div className={styles.gauge}>
-    <div className={styles.gaugeHeader}><h3>Risk Monitor<span aria-hidden="true"> /</span></h3><span className={styles.sample}>Sample account</span></div>
-    <div className={styles.simulator}>
-      <div className={styles.simulatorHeading}><label htmlFor="day-pnl">Simulate your day</label><output htmlFor="day-pnl" className={styles.dayValue}>{signed}</output></div>
-      <input id="day-pnl" type="range" min={-6} max={10} step={0.1} value={pnl} onChange={event=>setPnl(Number(event.target.value))} aria-valuetext={`${signed} daily profit and loss`} aria-describedby="simulation-note" />
-      <div className={styles.rangeLabels} aria-hidden="true"><span>−6%</span><span>DAILY P&L</span><span>+10%</span></div>
-    </div>
-    <div className={styles.ruleGrid}>{rules.map(rule => {
-      // A profit target is an objective, never a loss breach. Over-limit text stays truthful while the visual bar caps at 100%.
-      const severity = rule.kind === "target" ? "safe" : riskState(rule.value,rule.limit);
-      return <div className={styles.rule} key={rule.name} data-severity={severity}>
-        <h4>{rule.name}</h4><div className={styles.ruleValue}><span aria-hidden="true"><Count value={rule.value} />%</span><span className={styles.visuallyHidden}>{rule.value.toFixed(1)}%</span><small> / {rule.limit}%</small></div>
-        <div className={styles.bar} role="meter" aria-label={`${rule.name}: ${rule.detail}`} aria-valuemin={0} aria-valuemax={rule.limit} aria-valuenow={Math.min(rule.value,rule.limit)} aria-valuetext={`${rule.value.toFixed(1)}% of ${rule.limit}% ${rule.kind === "target" ? "target" : "limit"}${severity === "breach" ? "; breached" : ""}`}>
-          <motion.div initial={false} animate={{scaleX:Math.min(rule.value/rule.limit,1)}} transition={{duration:reduced?0:timing.duration.short}} /><span className={styles.limitMark} />
-        </div><span className={styles.micro}>{rule.kind === "target" ? "TARGET" : "LIMIT"} {rule.limit.toFixed(1)}%</span>
-      </div>;
-    })}</div>
-    <div className={styles.status} data-severity={state} role="status" aria-live="polite" aria-atomic="true"><span aria-hidden="true" />{status}</div>
-    <p id="simulation-note" className={styles.gaugeNote}>Sample opens at <span className={styles.numeric}>7.6%</span> profit progress and <span className={styles.numeric}>4.4%</span> drawdown. Move today’s P&L to see the effect. Illustrative values; actual rules depend on your program.</p>
-  </div>;
-}
-
-export function Landing() {
-  const reduced = useMotionPreference();
-  return <MotionConfig transition={{ duration: timing.duration.base, ease: timing.ease }} reducedMotion={reduced ? "always" : "never"}>
-    <div className={styles.masthead}>
-      <header className={styles.header}>
-        <Link href="/" className={styles.wordmark}>Funded<span>HUB</span><i aria-hidden="true" /></Link>
-        <nav aria-label="Main navigation"><a href="#process">Process</a><a href="#risk">Rules</a><a href="#programs">Programs <span aria-hidden="true">↗</span></a></nav>
-      </header>
-      <section className={styles.hero} aria-labelledby="hero-title">
-        <div className={styles.heroMeta}><span className={styles.micro}>CRYPTO PROP TRADING</span><span className={styles.micro}>DISCIPLINE HAS AN UPSIDE.</span></div>
-        <div className={styles.heroLayout}><div className={styles.heroCopy}><h1 id="hero-title">Less noise.<br /><em>More nerve.</em></h1><p className={styles.lead}>Take a challenge on simulated capital. Trade crypto on Bybit Demo. Respect the risk rules and earn real profit-share payouts.</p><a href="/programs" className={styles.cta}>Find your program <span aria-hidden="true">↗</span></a></div><HeroArt /></div>
-        <div className={styles.heroBottom}><span className={styles.micro}>SIMULATED CAPITAL. MEASURABLE DISCIPLINE.</span><span className={styles.micro}>SCROLL TO EXPLORE <span aria-hidden="true">↓</span></span></div>
-      </section>
-    </div>
-    <Journey />
-    <section className={`${styles.section} ${styles.risk}`} id="risk" aria-labelledby="risk-title">
-      <Reveal className={styles.riskIntro}><span className={styles.kicker}>02 / THE OPERATING LIMITS</span><div><h2 id="risk-title">Know exactly<br /><em>where you stand.</em></h2><p className={styles.lead}>A target to reach.<br />Boundaries to respect.<br />Keep all three in sight.</p></div></Reveal><RiskGauge />
-    </section>
-    <section className={`${styles.section} ${styles.programs}`} id="programs" aria-labelledby="programs-title">
-      <Reveal className={styles.programHeading}><div><span className={styles.kicker}>03 / PROGRAMS</span><h2 id="programs-title">Your next <em>move.</em></h2></div><p className={styles.lead}>Choose the structure.<br />Bring your own strategy.</p></Reveal>
-      <div className={styles.programGrid}>{programs.map((program,index)=><a className={styles.programCard} href="/programs" key={program.name}>
-        <span className={styles.programIndex}>0{index+1}<span className={styles.cardArrow} aria-hidden="true">↗</span></span><h3>{program.name}</h3><span className={styles.micro}>{program.label}</span><p>{program.text}</p>
-        <div className={styles.referenceFigures}><span className={styles.micro}>REFERENCE FIGURES</span><div><strong>{program.capital}</strong><span className={styles.micro}>SIMULATED CAPITAL</span></div><div><strong>{program.share}</strong><span className={styles.micro}>REWARD SHARE</span></div></div><span className={styles.programLink}>View program <span aria-hidden="true">↗</span></span>
-      </a>)}</div>
-    </section>
-    <section className={styles.closing} aria-labelledby="closing-title">
-      <Reveal className={styles.closingInner}><div><span className={styles.kicker}>MAKE YOUR NEXT MOVE A CONSIDERED ONE.</span><h2 id="closing-title">Bring your<br /><em>discipline.</em></h2></div><a href="/programs" className={styles.cta}>Explore programs <span aria-hidden="true">↗</span></a></Reveal>
-      <footer className={styles.footer}><div className={styles.footerTop}><Link href="/" className={styles.wordmark}>Funded<span>HUB</span><i aria-hidden="true" /></Link><span className={styles.micro}>CRYPTO ONLY. ALWAYS IN PERSPECTIVE.</span><a href="#hero-title">Back to top ↑</a></div><div className={styles.footerBottom}><p>All trading uses simulated capital on Bybit Demo. Real profit-share payouts depend on eligibility, risk compliance and program terms. Simulated results do not guarantee future performance. Trading involves risk.</p><span className={styles.micro}>© <span className={styles.numeric}>2026</span> FUNDED HUB</span></div></footer>
-    </section>
-  </MotionConfig>;
 }

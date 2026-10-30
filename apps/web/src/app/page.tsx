@@ -1,11 +1,15 @@
-import { Bodoni_Moda, IBM_Plex_Mono, Manrope } from "next/font/google";
+import type { Metadata } from "next";
+import { Instrument_Sans, Instrument_Serif } from "next/font/google";
 import { Landing } from "@/components/landing/landing";
-import styles from "@/components/landing/landing.module.css";
 
-const display = Bodoni_Moda({ subsets: ["latin"], weight: "500", variable: "--landing-display", display: "swap" });
-const sans = Manrope({ subsets: ["latin"], variable: "--landing-sans", display: "swap" });
-const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: "400", variable: "--landing-mono", display: "swap" });
+const sans = Instrument_Sans({ subsets: ["latin"], variable: "--font-landing-sans", display: "block" });
+const display = Instrument_Serif({ subsets: ["latin"], weight: "400", style: "italic", variable: "--font-landing-display", display: "block" });
+
+export const metadata: Metadata = {
+  title: { absolute: "Funded HUB — Your edge. Amplified." },
+  description: "Choose a crypto trading challenge, practice on Bybit Demo, and keep your progress and risk limits in view. A Funded HUB design preview using simulated accounts.",
+};
 
 export default function HomePage() {
-  return <div className={`${styles.page} ${display.variable} ${sans.variable} ${mono.variable}`}><Landing /></div>;
+  return <Landing className={[sans.variable, display.variable].join(" ")} />;
 }
