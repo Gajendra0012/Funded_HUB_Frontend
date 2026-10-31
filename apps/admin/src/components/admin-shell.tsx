@@ -1,43 +1,16 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef, useState, type ReactNode } from "react";
-import { Button } from "@funded-hub/ui";
-import { usePreview } from "./preview-provider";
-
-const navigation = [
-  { href: "/", label: "Overview", icon: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" },
-  { href: "/users", label: "Admin users", icon: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M13 3a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-3.87M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8" },
-  { href: "/roles", label: "Roles & permissions", icon: "M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11ZM9 12l2 2 4-4" },
-  { href: "/audit", label: "Audit log", icon: "M8 3H5v18h14V3h-3M9 2h6v4H9zM8 11h8M8 15h8" },
-  { href: "/settings", label: "Platform settings", icon: "M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6" },
-];
-
-export function AdminShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const resetDialog = useRef<HTMLDialogElement>(null);
-  const { reset } = usePreview();
-  const current = navigation.find(item => item.href === pathname)?.label ?? "Admin workspace";
-
-  return (
-    <div className="admin-layout">
-      <a className="skip-link" href="#main-content">Skip to content</a>
-      <aside className={`sidebar ${mobileOpen ? "sidebar-open" : ""}`}>
-        <Link className="admin-brand" href="/" onClick={() => setMobileOpen(false)}><span className="brand-mark" aria-hidden="true">N↗</span><span>NovaEdge<small>CAPITAL / ADMIN</small></span></Link>
-        <div className="workspace-label"><span className="workspace-dot"/>Demo workspace<span>LOCAL</span></div>
-        <span className="nav-group-label">WORKSPACE</span>
-        <nav aria-label="Admin navigation">{navigation.map(item => <Link key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined} onClick={() => setMobileOpen(false)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={item.icon}/></svg>{item.label}{pathname === item.href && <span className="active-nav-dot"/>}</Link>)}</nav>
-        <div className="sidebar-bottom"><div className="sidebar-note"><span aria-hidden="true">◇</span><strong>A foundation for oversight.</strong><p>Users, access and operational context. One workspace.</p></div><button className="reset-preview" onClick={() => resetDialog.current?.showModal()}>↺ Reset sample data</button><div className="sidebar-user"><span className="avatar">AM</span><div><strong>Alex Morgan</strong><span>Preview administrator</span></div><span className="user-preview-dot"/></div></div>
-      </aside>
-      <div className="admin-main">
-        <header className="topbar"><button className="mobile-toggle" aria-expanded={mobileOpen} aria-label={mobileOpen ? "Close admin navigation" : "Open admin navigation"} onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? "×" : "☰"}</button><div className="breadcrumb">Workspace <span>/</span> <strong>{current}</strong></div><div className="topbar-right"><span className="environment-tag"><span/>DESIGN PREVIEW</span><span className="topbar-divider"/><span className="topbar-date">29 Oct 2026 <small>· sample session</small></span></div></header>
-        <div className="preview-banner"><span className="banner-icon" aria-hidden="true">i</span><p><strong>Local frontend preview.</strong> Fictional data, kept in memory. No real login, permissions or account changes. Reload to reset.</p></div>
-        <main id="main-content" tabIndex={-1} className="content-wrap">{children}</main>
-        <footer className="admin-footer"><span>NovaEdge Capital · Admin design preview</span><span>Authentication and APIs are not connected</span></footer>
-      </div>
-      <dialog ref={resetDialog} className="admin-dialog" aria-labelledby="reset-title"><h2 id="reset-title">Reset the workspace?</h2><p>This clears only the in-memory sample edits and restores the original fictional users, settings and events.</p><form method="dialog" className="dialog-actions"><Button variant="secondary" type="submit">Keep changes</Button><Button type="submit" onClick={() => reset()}>Reset sample data</Button></form></dialog>
-    </div>
-  );
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Drawer, RoleBadge, Toast } from "@funded-hub/ui";
+import type { NavGroup } from "@/mocks/types";
+import { Brand } from "./brand";
+const paths:Record<string,string>={grid:"M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",pulse:"M2 12h4l3-8 6 16 3-8h4",flag:"M5 22V3h14l-3 5 3 5H5",check:"m5 12 4 4L19 6",shield:"M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z",people:"M3 21v-4c0-5 12-5 12 0v4M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8M17 5c5 0 5 6 0 6M19 14c3 0 3 4 3 7",receipt:"M5 3h14v18l-3-2-4 2-4-2-3 2V3ZM8 7h8M8 12h8",return:"M4 8h10a6 6 0 0 1 0 12H8M4 8l5-5M4 8l5 5",arrow:"M4 12h16m-6-6 6 6-6 6",chart:"M3 3v18h18M6 15l5-5 4 3 5-7",link:"m8 16 8-8M9 6l2-2a5 5 0 0 1 7 7l-2 2M15 18l-2 2a5 5 0 0 1-7-7l2-2",tag:"M3 3h8l10 10-8 8L3 11V3Zm4 4h1",list:"M8 6h13M8 12h13M8 18h13M3 6h1M3 12h1M3 18h1",settings:"M3 6h18M3 12h18M3 18h18M8 3v6M16 9v6M10 15v6"};
+function NavIcon({name}:{name:string}) {return <svg viewBox="0 0 24 24" fill="none" stroke="var(--admin-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name]}/></svg>;}
+export function AdminShell({children,navigation,identity,showDev}:{showDev:boolean;children:ReactNode;navigation:NavGroup[];identity:{name:string;initials:string;role:string;environment:string;session:string;now:string}}) {
+ const pathname=usePathname(); const [collapsed,setCollapsed]=useState(false),[mobile,setMobile]=useState(false),[search,setSearch]=useState(""),[message,setMessage]=useState("");const searchRef=useRef<HTMLInputElement>(null);
+ useEffect(()=>{const key=(event:KeyboardEvent)=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="k"){event.preventDefault();searchRef.current?.focus();}};window.addEventListener("keydown",key);return ()=>window.removeEventListener("keydown",key);},[]);
+ function nav(isMobile=false) {return <><Link href="/" aria-label="Funded HUB admin dashboard" onClick={()=>setMobile(false)}><Brand/></Link><div className="nav-workspace"><span>Operations workspace</span></div><nav aria-label={isMobile ? "Mobile admin navigation" : "Admin navigation"}>{navigation.map(group=><section className="nav-group" key={group.label}><h2>{group.label}</h2>{group.items.map(item=><Link className="nav-item" key={item.href} href={item.href} aria-label={item.label} title={collapsed&&!isMobile ? item.label : undefined} aria-current={pathname===item.href ? "page" : undefined} onClick={()=>setMobile(false)}><NavIcon name={item.icon}/><span>{item.label}</span>{collapsed&&!isMobile && <span className="nav-tooltip" role="tooltip">{item.label}</span>}</Link>)}</section>)}</nav><div className="nav-bottom">{showDev && <Link href="/dev/components" title="Component library"><NavIcon name="grid"/><span>Component library</span></Link>}{!isMobile && <button aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} aria-expanded={!collapsed} onClick={()=>setCollapsed(!collapsed)} title={collapsed ? "Expand sidebar" : "Collapse sidebar"}><svg viewBox="0 0 24 24" fill="none" stroke="var(--admin-text)" strokeWidth="1.5" aria-hidden="true"><path d={collapsed ? "m9 6 6 6-6 6" : "m15 6-6 6 6 6"}/><path d="M3 4v16"/></svg><span>Collapse sidebar</span></button>}</div></>;}
+ const matches=navigation.flatMap(group=>group.items).filter(item=>item.label.toLowerCase().includes(search.toLowerCase()));
+ return <div className={"admin-layout"+(collapsed ? " is-collapsed" : "")}><a className="skip-link" href="#main-content">Skip to content</a><aside className="sidebar">{nav()}</aside><Drawer open={mobile} onClose={()=>setMobile(false)} title="Navigation"><div className="mobile-nav">{nav(true)}</div></Drawer><div className="admin-main"><header className="topbar"><button className="mobile-toggle" aria-label="Open navigation" onClick={()=>setMobile(true)}>☰</button><div className="global-search"><label><span className="ui-sr">Search admin pages</span><svg className="search-icon" viewBox="0 0 20 20" fill="none" stroke="var(--admin-muted)" strokeWidth="1.5" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg><input ref={searchRef} type="search" placeholder="Search workspace…" value={search} onChange={event=>setSearch(event.target.value)} onKeyDown={event=>{if(event.key==="Escape") setSearch("");}}/><kbd>Ctrl K</kbd></label>{search && <div className="search-results">{matches.map(item=><Link key={item.href} href={item.href} onClick={()=>setSearch("")}>{item.label}<span>↗</span></Link>)}{!matches.length && <p>No matching pages</p>}</div>}</div><div className="topbar-right"><span className="environment-tag">{identity.environment}</span><span className="sample-tag">Sample data</span><time className="utc-clock" dateTime={identity.now} aria-label="Sample UTC time">{identity.now.slice(11,19)} UTC</time><span className="session-indicator">Session expires in <code>{identity.session}</code></span><RoleBadge role={identity.role}/><details className="user-menu"><summary aria-label="Open user menu">{identity.initials}</summary><div><strong>{identity.name}</strong><p>Sample administrator</p><button onClick={()=>setMessage("Sample · profile action previewed.")}>View profile</button><button onClick={()=>setMessage("Sample · sign out action previewed.")}>Sign out</button></div></details></div></header><main id="main-content" tabIndex={-1} className="content-wrap">{children}</main><footer className="admin-footer"><span>Funded HUB · Operations</span><span>Sample workspace · All times UTC</span></footer></div>{message && <Toast message={message} onClose={()=>setMessage("")}/>}</div>;
 }

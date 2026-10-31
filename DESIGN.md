@@ -31,3 +31,27 @@ Latest adjustment: remove the standalone sample-price ticker above the laptop. T
 Hero cleanup: remove the hero-only Pause background button and small floating risk caption. Retain the below-hero world pause control and footer risk disclosure.
 
 Latest hero adjustment: remove the broad radial scrim. Use localized text shadows on the headline and paragraph so no circular blue overlay obscures the globe. Headline sizing is reduced from the earlier 1.4x version.
+
+## Admin
+
+The admin is the landing product at operational density: dark, calm, no video, 3D, parallax or entry animation. Only 150–200ms control transitions (180ms default); respect reduced motion. Keep Geist UI, Geist Mono numbers/IDs/timestamps and Instrument Serif italic only for the login signature. Every timestamp is explicitly labelled UTC. Existing landing tokens, glass values, control/card radii and tests remain intact.
+
+Admin additions are scoped to .admin-theme in packages/ui; nothing changes the landing palette:
+
+| Token | Source and reason |
+| --- | --- |
+| --admin-background | Existing --accent-3 (#0B2545), alias for workspace background. |
+| --admin-surface-1 | 94% accent-3 / 6% existing white, for sidebar and sticky headers. |
+| --admin-surface-2 | 92% accent-1 / 8% existing white, for hover, selection and raised controls. |
+| --admin-border | Existing glass-light-border, shared hairline. |
+| --admin-text / --admin-muted | Existing white / landing-tint, readable operational text. |
+| --admin-fill | Existing accent-3 at 96% opacity: tables, forms and dialogs raise panel fill opacity so content stays legible. No new glass recipe. |
+| --admin-profit / loss / caution / info / neutral | Aliases of data-profit / data-loss / signal-warning / landing-tint / landing-tint. Only data states receive semantic color; navigation, roles and environments stay neutral. Labels distinguish states without relying on color. |
+| --admin-row / --admin-row-compact | 44px / 36px, consistent table density. |
+| --admin-transition | 180ms, restrained control transitions. |
+
+Panels use glass-panel-background, glass-panel-border, glass-panel-shadow and glass-panel-still-filter; light controls use glass-light values. Safe usage bars use brand blue, near-limit amber at 80%, breached red at 100%; profit target progress stays blue. Blue accent-2 provides focus rings and active navigation. No new colors, fonts, radii or glass values.
+
+The only brand moment is /login: the exact landing /video/mid.webp still, blurred and darkened using existing glass filters and navy, with the existing logo, centered glass card and an italic Instrument Serif accent. It never plays video. Login and reauthentication are visual previews only. All new operational fixtures live in apps/admin/src/mocks with one types.ts and enter components through props. Legacy preview reducers and tests are retained as isolated fixtures; rendered action buttons only open dialogs or report a Sample toast and do not mutate records. /dev/components returns 404 in production. Existing user, role, audit and settings screens are restyled rather than rebuilt; new routes start with a titled empty state.
+
+Admin readability refinements: body and table cells are 14px, IDs/numeric values 13px, and all secondary labels are at least 12px. Muted copy retains the existing landing-tint token and is checked against each navy surface at a minimum 4.5:1 ratio. --font-display in the shared admin scope aliases the existing Instrument Serif variable; no new font is introduced. Funded HUB uses the landing’s text wordmark with Admin as its subline. The mock header clock and Snapshot label share SAMPLE_NOW; event and check timestamps derive from that fixture anchor. KPI sparklines stay brand blue; only delta text uses profit/loss colors.

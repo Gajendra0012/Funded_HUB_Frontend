@@ -1,50 +1,8 @@
-export const roles = ["Admin", "Risk", "Support", "Finance"] as const;
-export type Role = (typeof roles)[number];
-export type AdminUser = {
-  id: string;
-  name: string;
-  email: string;
-  roles: Role[];
-  status: "Active" | "Invited" | "Disabled";
-  twoFactor: "Enrolled" | "Setup required";
-  lastLogin: string | null;
-};
-export const countryOptions = [
-  { code: "US", name: "United States" }, { code: "GB", name: "United Kingdom" },
-  { code: "CA", name: "Canada" }, { code: "IN", name: "India" },
-  { code: "AE", name: "United Arab Emirates" }, { code: "SG", name: "Singapore" },
-];
-export type Settings = { platformName: string; supportEmail: string; restrictedCountries: string[] };
-export type AuditEvent = { id: string; at: string; actor: string; action: string; entity: string; ip: string; before: unknown; after: unknown };
-export type PreviewState = { users: AdminUser[]; events: AuditEvent[]; settings: Settings };
-export const currentPreviewUser = "staff-001";
-
-export const initialState: PreviewState = {
-  users: [
-    { id: "staff-001", name: "Alex Morgan", email: "alex@example.com", roles: ["Admin"], status: "Active", twoFactor: "Enrolled", lastLogin: "2026-10-29T09:00:00Z" },
-    { id: "staff-002", name: "Jordan Lee", email: "jordan@example.com", roles: ["Admin", "Risk"], status: "Active", twoFactor: "Enrolled", lastLogin: "2026-10-29T08:32:00Z" },
-    { id: "staff-003", name: "Samira Khan", email: "samira@example.com", roles: ["Risk"], status: "Active", twoFactor: "Enrolled", lastLogin: "2026-10-29T08:14:00Z" },
-    { id: "staff-004", name: "Daniel Brooks", email: "daniel@example.com", roles: ["Support"], status: "Active", twoFactor: "Enrolled", lastLogin: "2026-10-28T16:30:00Z" },
-    { id: "staff-005", name: "Priya Shah", email: "priya@example.com", roles: ["Finance"], status: "Invited", twoFactor: "Setup required", lastLogin: null },
-    { id: "staff-006", name: "Evan Reed", email: "evan@example.com", roles: ["Support"], status: "Disabled", twoFactor: "Enrolled", lastLogin: "2026-10-23T10:18:00Z" },
-  ],
-  events: [
-    { id: "event-005", at: "2026-10-29T09:00:00Z", actor: "Alex Morgan", action: "admin.login", entity: "staff-001", ip: "192.0.2.10", before: null, after: { outcome: "Sample sign-in" } },
-    { id: "event-004", at: "2026-10-29T08:45:00Z", actor: "Alex Morgan", action: "admin.created", entity: "staff-005", ip: "192.0.2.10", before: null, after: { email: "priya@example.com", roles: ["Finance"], status: "Invited" } },
-    { id: "event-003", at: "2026-10-29T08:20:00Z", actor: "Jordan Lee", action: "admin.updated", entity: "staff-003", ip: "192.0.2.11", before: { roles: ["Support"] }, after: { roles: ["Risk"] } },
-    { id: "event-002", at: "2026-10-28T16:45:00Z", actor: "Alex Morgan", action: "settings.updated", entity: "platform", ip: "192.0.2.10", before: { platformName: "Demo" }, after: { platformName: "NovaEdge Capital" } },
-    { id: "event-001", at: "2026-10-28T15:10:00Z", actor: "Alex Morgan", action: "admin.disabled", entity: "staff-006", ip: "192.0.2.10", before: { status: "Active" }, after: { status: "Disabled" } },
-  ],
-  settings: { platformName: "NovaEdge Capital", supportEmail: "support@example.com", restrictedCountries: [] },
-};
-
-export type UserInput = Pick<AdminUser, "name" | "email" | "roles">;
-export type PreviewCommand =
-  | { type: "create-user"; user: UserInput }
-  | { type: "update-user"; id: string; user: UserInput }
-  | { type: "toggle-user"; id: string }
-  | { type: "save-settings"; settings: Settings };
-
+import { countryOptions, currentPreviewUser, roles } from "../mocks/legacy";
+import type { AdminUser, PreviewState, PreviewCommand } from "../mocks/types";
+export { countryOptions, currentPreviewUser, initialState, permissionMatrix, roles } from "../mocks/legacy";
+export type { AdminUser, AuditEvent, PreviewState, Role, Settings } from "../mocks/types";
+export type { UserInput, PreviewCommand } from "../mocks/types";
 function validateEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -101,25 +59,5 @@ export function applyPreviewCommand(state: PreviewState, command: PreviewCommand
 
 export function formatTimestamp(value: string | null) {
   if (!value) return "Not signed in";
-  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "UTC" }).format(new Date(value));
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "UTC" }).format(new Date(value)) + " UTC";
 }
-
-// Display-only reference from Sprint 1 Detailed Plan pp. 10–11, not an authorization policy.
-export const permissionMatrix: { label: string; allowed: readonly Role[] }[] = [
-  { label: "View traders and accounts", allowed: roles },
-  { label: "Edit trader details", allowed: ["Admin", "Support"] },
-  { label: "Manage programs, add-ons and payout settings", allowed: ["Admin"] },
-  { label: "Publish rule sets", allowed: ["Admin", "Risk"] },
-  { label: "View risk monitor and violations", allowed: ["Admin", "Risk", "Support"] },
-  { label: "Take risk actions", allowed: ["Admin", "Risk"] },
-  { label: "Review abuse flags", allowed: ["Admin", "Risk"] },
-  { label: "Review KYC", allowed: ["Admin", "Support"] },
-  { label: "View orders/payments and record refunds", allowed: ["Admin", "Finance"] },
-  { label: "Approve payouts", allowed: ["Admin", "Finance"] },
-  { label: "Manage affiliates and discount codes", allowed: ["Admin", "Finance"] },
-  { label: "Manage content, templates and competitions", allowed: ["Admin", "Support"] },
-  { label: "View reports and exports", allowed: ["Admin", "Risk", "Finance"] },
-  { label: "Manage admin users and roles", allowed: ["Admin"] },
-  { label: "View the audit log", allowed: ["Admin", "Risk", "Finance"] },
-  { label: "Change system settings", allowed: ["Admin"] },
-];
