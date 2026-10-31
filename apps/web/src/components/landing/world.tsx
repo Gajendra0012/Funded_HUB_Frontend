@@ -26,7 +26,7 @@ export function World({ hero, end, paused }: { hero: RefObject<HTMLDivElement|nu
   },[still]);
   useEffect(()=>{
     const target=end.current;
-    if(!target)return;
+    if(!target || typeof IntersectionObserver === "undefined")return;
     const near=new IntersectionObserver(([entry])=>{if(entry.isIntersecting)setNearFinal(true);},{rootMargin:"600px"});
     const visible=new IntersectionObserver(([entry])=>{if(entry.isIntersecting&&entry.intersectionRatio>.12)setZone("final");else if(window.scrollY>innerHeight*.95)setZone("middle");},{threshold:[0,.12]});
     near.observe(target);visible.observe(target);

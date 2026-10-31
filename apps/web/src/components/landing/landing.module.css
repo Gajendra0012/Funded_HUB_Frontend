@@ -237,7 +237,7 @@
 .sub { width:max-content;max-width:calc(100vw - 48px);margin-left:auto;margin-right:auto;font-size:max(17px,calc(16.5 * var(--u))); }
 .disclosure {background:rgba(7,26,51,.72);border:1px solid rgba(255,255,255,.10);padding:8px 12px;border-radius:10px;color:#e2ebf5;}
 .playback {background:rgba(7,26,51,.72);color:#e2ebf5;min-height:44px;}
-.dialog {background:rgba(7,26,51,.96);border-color:rgba(255,255,255,.10);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 #ffffff10;}
+.dialog {background:rgba(7,26,51,.96);border-color:rgba(255,255,255,.10);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 #ffffff10;}
 .dialog p,.dialog .dialog-note {font-size:17px;line-height:1.75;color:#e2ebf5;}
 .dialog .eyebrow,.dialog a {color:#9dc3e6;}
 .hero :is(a,button):focus-visible,.dialog :is(a,button):focus-visible {outline-color:#9dc3e6;}
@@ -247,7 +247,7 @@
 @media(max-width:552px){.nav{padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right));}}
 /* Unboxed hero text; localized text shadows provide separation. */
 .hero-inner{top:43%;isolation:isolate;}
-.hero-inner::before{content:"";position:absolute;inset:-24px -36px;z-index:-1;pointer-events:none;background:rgba(2,10,22,.18);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);mask-image:linear-gradient(to right,transparent,#000 12%,#000 88%,transparent),linear-gradient(to bottom,transparent,#000 12%,#000 88%,transparent);mask-composite:intersect;-webkit-mask-image:linear-gradient(to right,transparent,#000 12%,#000 88%,transparent),linear-gradient(to bottom,transparent,#000 12%,#000 88%,transparent);-webkit-mask-composite:source-in;}
+
 .hero .sub{font-size:max(18px,calc(18 * var(--u)));line-height:1.65;margin-top:32px;}
 .hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:30%;background:linear-gradient(0deg,#071a33 0%,rgba(7,26,51,.86) 38%,rgba(7,26,51,0) 100%);pointer-events:none;z-index:1;}
 .hero[data-trading="true"] .playback{bottom:176px;}
@@ -258,5 +258,17 @@
 @media(max-width:552px) and (max-height:720px){.hero[data-trading="true"]{min-height:860px;}}
 
 /* Local ink shadows support the text without painting an oval over the globe. */
-.heading .ln-i{text-shadow:0 2px 12px rgba(2,10,22,.92),0 0 30px rgba(7,26,51,.65);}
-.hero .sub{text-shadow:0 1px 5px #020a16,0 0 12px rgba(2,10,22,.95);}
+.heading .ln-i{text-shadow:0 2px 28px rgba(5,14,30,.55);}
+.hero .sub{text-shadow:0 2px 28px rgba(5,14,30,.55);}
+.hero .sub{max-width:660px;font-size:clamp(18px,1.4vw,20px);line-height:1.55;color:#C9D6E6;margin:32px auto 0;}
+
+
+
+/* Reuse shared glass for supporting hero controls; primary actions keep their white accent. */
+.btn-login,.btn-ghost,.burger,.dialog-close,.playback,.disclosure{background:var(--glass-light-background);border:var(--glass-light-border);-webkit-backdrop-filter:var(--glass-light-filter);backdrop-filter:var(--glass-light-filter);}
+.btn-login:hover,.btn-ghost:hover{background:var(--glass-light-background);border-color:#9dc3e6;}
+.menu{background:var(--glass-panel-background);border:var(--glass-panel-border);box-shadow:var(--glass-panel-shadow);}
+.dialog{background:var(--glass-panel-background);border:var(--glass-panel-border);box-shadow:var(--glass-panel-shadow);-webkit-backdrop-filter:none;backdrop-filter:none;}
+
+/* A single ellipse reaches transparency before its bounds, with no masked rectangle. */
+.hero-inner::before{content:"";position:absolute;inset:auto;left:50%;top:50%;width:75vw;height:70dvh;transform:translate(-50%,-50%);z-index:-1;pointer-events:none;background:radial-gradient(ellipse closest-side at center,rgba(5,14,30,.30) 0%,rgba(5,14,30,.16) 40%,rgba(5,14,30,.06) 70%,rgba(5,14,30,0) 100%);}

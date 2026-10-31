@@ -16,7 +16,7 @@ export function chartPath(values: readonly number[], width = 800, height = 220) 
   return values.map((value, i) => `${i ? "L" : "M"}${(i / (values.length - 1) * width).toFixed(1)},${(height - 20 - value / 20 * (height - 40)).toFixed(1)}`).join(" ");
 }
 export const programs = [
-  { name: "1-Step", note: "One focused evaluation.", phases: ["Evaluation"], share: "up to 90%", line: [0,3,2,5,4,7,6,10,9,13,15] },
-  { name: "2-Step", note: "A deliberate way forward.", phases: ["Phase 1", "Phase 2"], share: "up to 90%", line: [0,2,4,3,6,8,7,9,11,10,14] },
-  { name: "Instant", note: "A different starting point.", phases: ["Direct to funded"], share: "up to 90%", line: [5,6,5,8,7,10,9,12,11,13,14] },
+  { name: "1-Step", note: "One evaluation phase, then the simulated funded stage.", phases: ["Evaluation"], share: "up to 90%", line: [0,3,2,5,4,7,6,10,9,13,15] },
+  { name: "2-Step", note: "Two evaluation phases, then the simulated funded stage.", phases: ["Phase 1", "Phase 2"], share: "up to 90%", line: [0,2,4,3,6,8,7,9,11,10,14] },
+  { name: "Instant", note: "No evaluation. Start on the simulated funded stage under that program’s rules.", phases: ["Direct to funded"], share: "up to 90%", line: [5,6,5,8,7,10,9,12,11,13,14] },
 ] as const;

@@ -1,56 +1,42 @@
-# Cinematic landing refinement — verification
+# Landing QA — 31 October 2026
 
-30 October 2026. Branch: feat/quiet-precision-landing. Changes remain local and uncommitted.
+## Corrected brief
+Reverted the untracked AGENTS.md created from the mistaken Railwise prompt. Work remains on feat/quiet-precision-landing. Only landing components, landing metadata/fonts, DESIGN.md, this report and a new landing regression test changed. Existing tests, shared tokens, packages/ui, admin and backend are untouched.
 
-## Implemented in the requested order
+## Completed
+Every section renders in server HTML with real content, not observer-gated placeholders. Reveals start visible and only add optional transforms. Missing IntersectionObserver leaves static content; number and price observers are guarded. Reduced-motion and Save-Data behavior, world/video playback manager, Risk Monitor arithmetic, sample labels and footer risk disclosure are retained.
 
-1. Hero: desktop headline 115 reference units instead of 82 (~1.4x), phone width-constrained sizing, italic line-height 1.10, a 32px authored subline gap, and minimum 18px supporting text. Feathered navy radial scrim; no rectangular text cards.
-2. Trading layer: pausable Sample prices strip for BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT; a PriceSource interface with deterministic fixtures; seeded handmade SVG candles; Sample account dashboard with desktop 12-degree-to-flat scroll reveal. Subscription starts only after mount while visible and stops for pause, hidden tabs, reduced motion, Save-Data, and unmount. Both views share one subscription.
-3. Hero seam: a 30%-height gradient into #071A33 and a matching fade behind the dashboard bridge.
-4. World: retained the fixed globe-to-mid.webp composition, 42-node / 20 fps network, one-video playback manager, lazy final crop, and unboxed closing headline.
-5. Cards: glass fill raised to .88; signature Risk Monitor at .94; body 17px minimum and mono labels 12px minimum. Risk calculations are unchanged.
-6. Width: 1200px usable content, 1280px usable Risk Monitor on wide screens.
-7. Programs: aligned baseline, no per-card parallax or stagger. Unique sparklines retained. Reference figures now $5K to $200K and up to 90%, differentiated by one-step / two-step / direct phases. Clear note gap.
-8. Payouts: flat panel and aligned two-column composition; Sample label preserved.
-9. Copy: replaced development-note wording in section copy and supporting dialogs. Preserved Sample labels, the footer risk disclosure, and the factual no-live-accounts notice in informational dialogs.
+Geist 400/500/600 and Geist Mono replace the old sans/mono system. Italic serif remains on the second hero and final CTA lines only. Plain text steps and supporting copy replace redundant glass boxes. Glass product UI uses 12px corners and the requested fill/hairline/blur. Laptop hardware removed; floating dashboard flattens from 8 degrees, retains seeded data, pause controls and sample ticker. Supplied brief copy applied. Hero headline flagged in DESIGN.md for client review.
 
-## Checks
+## Visual polish loop
+Browser access is now available. Used browser Playwright controls to scroll to the bottom and save full-page screenshots at 1440x1000, 768x1024 and 390x844. All five content sections contain headings and body content, with computed visibility visible and opacity 1. No horizontal overflow at any tested width. The source-render regression verifies the same content before JavaScript. Phone dashboard reflows as a product window, not a stretched laptop. Checked the hero separately to verify the globe remains visible. Full-page captures show the fixed world in its current viewport position; they do not stitch a different background scroll state behind each section.
 
-Lint, TypeScript, tests, and production build pass. 22 tests across 7 files. Existing tests were preserved; the new sample-feed tests verify deterministic fixtures, candle validity, subscription timing, cleanup, and stable server rendering without timers.
+Critique and fixes: reduced excess program-card interior space, shortened the journey visual, normalized the last legacy payout H2 override, tightened section rhythm, retained aligned desktop program baselines and used a tablet single-column layout to avoid cramped cards. Removed footer background box to keep boxes exclusive to product UI. Only hero and closing use italic accents. Browser console returned no warnings/errors. Keyboard slider Home reached -6%, output updated and status became Rule breached. Pause prices control responds.
 
-The source audit follows the web-design-guidelines skill and the current Vercel Web Interface Guidelines. Native buttons retain focus states and touch targets. The ticker can be scrolled with keyboard focus. Motion is disabled for static preferences; SVG data colors stay inside the visual instruments. No admin, backend, shared tokens, packages/ui, package manifests, or lockfile changes were introduced by this refinement.
+Screenshots (outside repository):
+- C:/Users/dhruv/.codex/visualizations/2026/10/30/01a18bf0-d1b1-7c60-9847-b513216a0292/landing-1440.jpg
+- C:/Users/dhruv/.codex/visualizations/2026/10/30/01a18bf0-d1b1-7c60-9847-b513216a0292/landing-768.jpg
+- C:/Users/dhruv/.codex/visualizations/2026/10/30/01a18bf0-d1b1-7c60-9847-b513216a0292/landing-390.jpg
 
-## Contrast: source-pixel estimates, not a rendered confirmation
+## Web Interface Guidelines audit
+Fetched https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md fresh for this audit.
+Resolved findings:
+- apps/web/src/components/landing/landing-experience.tsx:11 — observer-gated sections replaced with eagerly rendered content.
+- apps/web/src/components/landing/cinematic-motion.tsx:10 — visible reveal baseline, no blur/opacity hiding and missing-observer fallback.
+- apps/web/src/components/landing/hero-trading.tsx:15 — guarded sample-feed observer and cleanup.
+- apps/web/src/components/landing/hero-trading.module.css:49 — removed JS screen measurement and hardware scaling; CSS responsive grid.
+- apps/web/src/app/page.tsx:5 — critical next/font assets use display swap.
+Existing skip link, focus-visible outlines, named buttons, slider label, live status, tabular numbers, safe areas, reduced motion and hidden-tab cleanup retained. No remaining source-level findings identified within changed landing scope. Lighthouse color contrast audit passed; this does not establish 7:1 against every moving video frame. Pixel-by-pixel video contrast sampling was not performed.
 
-Decoded actual hero-poster pixels at 192×108, then composited navy (7,26,51) at the stated opacity. Conditional minima:
+## Checks and Lighthouse
+Lint, TypeScript, all 24 tests (22 existing unchanged + 2 new rendering regressions), and production build pass.
+Final local production Lighthouse mobile: performance 98, accessibility 100. LCP 0.9 s, CLS 0.089, TBT 10 ms. This is one local simulated-mobile run, not a deployed-device measurement.
+Reports: C:/Users/dhruv/.codex/visualizations/2026/10/30/01a18bf0-d1b1-7c60-9847-b513216a0292/landing-lighthouse.report.html and .json.
 
-- White headline within a 78%-opacity scrim region: 9.53:1.
-- Subline #EDEDF2 within that region: 8.17:1.
-- Muted card text #C4D4E5 over 88%-opacity glass: 8.56:1.
+## Performance decisions
+Removed laptop shell and ResizeObserver scaling, broad blur entrance work, and content-loading gates. Preserved single-playing-video budget, mobile video, static preference fallbacks, lazy final media/canvas and off-screen/hidden work cleanup. No GSAP, smooth-scroll library or chart package added. Meaningful section content is eager to guarantee resilient rendering. Lighthouse still reports unused framework/Motion JavaScript; no speculative bundle rewrite was needed to meet the performance target.
 
-These numbers do NOT verify that every rendered glyph falls inside that opacity region, account for every moving video frame, or replace sampled rendered text pixels. The 7:1 / 4.5:1 rendered targets remain unverified.
+Skills: frontend-design for hierarchy and surfaces; gsap-framer-scroll-animation for Motion-only enhancements; vercel-react-best-practices for rendering and cleanup; web-design-guidelines for audit; takksh-trading-frontend for project boundaries and factual sample context; ponytail for a focused change.
 
-## Browser / Lighthouse limits
-
-The browser tool still reports local browser use disabled in Work settings. The earlier user preference was to finish with verification limits documented. No alternate browser-control path was used.
-
-- Playwright screenshots at 1440, 768, 390px: not captured.
-- Browser critique / visual polish loop: not performed.
-- Rendered-pixel contrast sampling: not performed.
-- Lighthouse mobile performance: NOT MEASURED; 85+ target unverified.
-- Lighthouse accessibility: NOT MEASURED; 100 target unverified.
-
-Responsive sizing, the authored descender gap, ticker/dashboard overlap, scroll transitions, and final focus behavior still need visual browser confirmation. Source checks are not a substitute for these checks.
-
-## Source critique and fixes
-
-- Removed old per-card stagger rules and scroll offsets rather than relying on an override alone.
-- Kept Risk Monitor math and sample arithmetic intact.
-- Increased glass opacity and mono label sizes, including nested mobile rules.
-- Added a keyboard-focusable horizontally scrollable quote strip.
-- Balanced the enlarged hero above the ticker and dashboard; narrow/short screens reserve more hero height.
-- Kept disclosure and sample labels rather than presenting seeded values as live quotes or real payouts.
-
-## Performance choices / cuts
-
-No charting library, live market API, WebGL, GSAP, magnetic CTA physics, or smooth-scroll dependency. The feed ticks only every 4 seconds and the 48 SVG candles change only their final close. Below-fold sections and the final video stay lazy. The network remains capped at 42 nodes, 20 fps, and 1.5 pixel density. Mobile gets the small video and no dashboard tilt or program parallax. No large fixed-layer runtime blur filters were added.
+## Latest user override — laptop restored
+The user requested the MacBook frame back after reviewing the floating window. Restored bezel, camera, chin and base around the existing dashboard, with a 16:10 mobile screen scaled uniformly in both axes. Desktop width remains contained. Current typography, dashboard labels, ticker and sample logic are retained. Updated DESIGN.md and the new rendering assertion accordingly. Lint, types, all 24 tests and production build pass; server refreshed. Browser reconnection failed during this follow-up, so the restored frame has not received a fresh screenshot. Earlier Lighthouse scores and screenshots describe the preceding floating-window version.

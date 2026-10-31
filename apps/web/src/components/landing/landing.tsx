@@ -151,7 +151,7 @@ export function Landing({ className = "", background, tradingLayer, hasTradingDa
       <nav className={styles["nav-links"]} aria-label="Primary">{navigation.map(key => background !== undefined && (key === "programs" || key === "process") ? <a key={key} href={key === "process" ? "#how-it-works" : "#programs"} onClick={() => setMenuOpen(false)}>{panels[key].label}</a> : <button key={key} type="button" onClick={() => navigate(key)} aria-haspopup="dialog">{panels[key].label}</button>)}</nav>
       <div className={styles["nav-actions"]}>
         <button className={`${styles.btn} ${styles["btn-login"]}`} type="button" onClick={() => openPanel("login")} aria-haspopup="dialog">Login</button>
-        <button className={`${styles.btn} ${styles["btn-nav-start"]}`} type="button" data-program-info onClick={() => openPanel("programs")} aria-haspopup="dialog">Get Started <Arrow /></button>
+        <button className={`${styles.btn} ${styles["btn-nav-start"]}`} type="button" data-program-info onClick={() => openPanel("programs")} aria-haspopup="dialog">See programs <Arrow /></button>
       </div>
       <button ref={burger} className={styles.burger} type="button" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} aria-controls="landing-menu" onClick={() => setMenuOpen(!menuOpen)}><span /></button>
     </header>
@@ -159,14 +159,14 @@ export function Landing({ className = "", background, tradingLayer, hasTradingDa
       {navigation.map(key => background !== undefined && (key === "programs" || key === "process") ? <a key={key} href={key === "process" ? "#how-it-works" : "#programs"} onClick={() => setMenuOpen(false)}>{panels[key].label}</a> : <button key={key} type="button" onClick={() => navigate(key)} aria-haspopup="dialog">{panels[key].label}</button>)}
       <div className={styles.divider} />
       <button type="button" onClick={() => openPanel("login")} aria-haspopup="dialog">Login</button>
-      <button className={styles["m-start"]} type="button" data-program-info onClick={() => openPanel("programs")} aria-haspopup="dialog">Get Started <Arrow /></button>
+      <button className={styles["m-start"]} type="button" data-program-info onClick={() => openPanel("programs")} aria-haspopup="dialog">See programs <Arrow /></button>
     </nav>
     <div className={styles["hero-inner"]}>
       <h1 id="hero-title" className={styles.heading}><span className={styles.ln}><span className={styles["ln-i"]}>Your edge.</span></span><span className={styles.ln}><span className={styles["ln-i"]}>Amplified.</span></span></h1>
-      <p className={styles.sub}>Choose your challenge. Trade crypto on Bybit Demo.<br /> Keep your progress and risk limits in view,<br /> and build your next chapter as a trader.</p>
+      <p className={styles.sub}>Take a challenge on simulated capital, trade USDT perpetuals on Bybit Demo, and earn a real share of the profit when you meet the rules.</p>
       <div className={styles.ctas}>
-        <button className={`${styles.btn} ${styles["btn-lg"]} ${styles["btn-primary"]}`} type="button" data-program-info onClick={() => openPanel("programs")} aria-haspopup="dialog">Get Started <Arrow /></button>
-        <button ref={lastCta} className={`${styles.btn} ${styles["btn-lg"]} ${styles["btn-ghost"]}`} type="button" onClick={() => openPanel("process")} aria-haspopup="dialog">How it works <Arrow /></button>
+        <button className={`${styles.btn} ${styles["btn-lg"]} ${styles["btn-primary"]}`} type="button" data-program-info onClick={() => openPanel("programs")} aria-haspopup="dialog">See programs <Arrow /></button>
+        <button ref={lastCta} className={`${styles.btn} ${styles["btn-lg"]} ${styles["btn-ghost"]}`} type="button" onClick={() => navigate("process")}>How it works <Arrow /></button>
       </div>
     </div>
     {tradingLayer}
@@ -175,7 +175,7 @@ export function Landing({ className = "", background, tradingLayer, hasTradingDa
       <span className={styles.eyebrow}>Funded HUB / {panels[panel].label}</span>
       <h2 id="landing-dialog-title">{panels[panel].title}</h2>
       {panels[panel].paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
-      <p className={styles["dialog-note"]}>Simulated capital. Preview only. No live accounts, purchases, or payouts are connected.</p>
+      <p className={styles["dialog-note"]}>Simulated capital. No live accounts, purchases, or payouts are connected.</p>
     </dialog>
   </section>;
 }

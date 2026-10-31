@@ -8,9 +8,9 @@ import { ease, NumberOnce, Reveal, SectionTitle } from "./cinematic-motion";
 import s from "./cinematic.module.css";
 
 const steps=[
-  {title:"Choose a starting point.",text:"Pick a challenge with simulated capital. Read the targets and loss limits before you begin.",note:"YOUR PROGRAM / YOUR PACE"},
-  {title:"Trade inside the lines.",text:"Execute your crypto trades on Bybit Demo. Funded HUB keeps your challenge progress and risk limits in view.",note:"CRYPTO ONLY / BYBIT DEMO"},
-  {title:"Make discipline count.",text:"Meet your program’s conditions and complete the required review to qualify for real profit-share payouts.",note:"SIMULATED CAPITAL / REAL PAYOUTS"},
+  {title:"Choose a program",text:"1-Step, 2-Step or Instant, with simulated accounts from $5K to $200K. Every target and loss limit is shown before you pay.",note:"Reference figures"},
+  {title:"Trade on Bybit Demo",text:"Connect a dedicated Demo sub-account with an API key. You place every order yourself on Bybit; we never trade for you. Funded HUB tracks your progress and limits."},
+  {title:"Earn a share of real profit",text:"Meet the targets, pass review, then request a payout in USDT, USDC or BTC. Rewards are paid by the firm after review."},
 ];
 
 function Arrow(){return <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 10h13m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;}
@@ -21,10 +21,10 @@ function Sparkline({values,id}: {values:readonly number[];id:string}){
 
 function JourneyVisual({active}: {active:number}){
   return <div className={`${s.glass} ${s.journeyVisual}`}>
-    <div className={s.instrumentTop}><span className={s.eyebrow}>YOUR NEXT CHAPTER</span><span className={s.serial}>0{active+1} / 03</span></div>
+    <div className={s.instrumentTop}><span className={s.eyebrow}>PROGRAM SETUP</span><span className={s.serial}>0{active+1} / 03</span></div>
     <div className={s.visualWindow}>
       <div className={s.visualScene} data-active={active===0} aria-hidden={active!==0} inert={active!==0}>
-        <span className={s.smallLabel}>CHALLENGE CONFIGURATION</span><div className={s.configTitle}>A place to<br/><em>begin.</em></div>
+        <span className={s.smallLabel}>CHALLENGE CONFIGURATION</span><div className={s.configTitle}>Choose your program</div>
         <div className={s.programChips}><span>1-Step</span><span className={s.selectedChip}>2-Step</span><span>Instant</span></div>
         <div className={s.accountValue}>$<NumberOnce value={100000}/></div><span className={s.smallLabel}>SIMULATED ACCOUNT SIZE</span>
         <div className={s.sizeChips}>{["$5K","$10K","$25K","$50K","$100K"].map(size=><span key={size} data-selected={size==="$100K"}>{size}</span>)}</div>
@@ -37,7 +37,7 @@ function JourneyVisual({active}: {active:number}){
         <ul className={s.permissions}><li><span>Read account</span><b aria-label="included">✓</b></li><li><span>Trade data</span><b aria-label="included">✓</b></li><li><span>Wallet balances</span><b aria-label="included">✓</b></li><li><span>No withdrawals</span><b aria-label="not permitted">−</b></li></ul>
       </div>
       <div className={s.visualScene} data-active={active===2} aria-hidden={active!==2} inert={active!==2}>
-        <span className={s.smallLabel}>MAKE DISCIPLINE COUNT</span><div className={s.configTitle}>Progress requires<br/><em>review.</em></div>
+        <span className={s.smallLabel}>SAMPLE EVALUATION</span><div className={s.configTitle}>Evaluation progress</div>
         <div className={s.journeyChart}><span>PROFIT TARGET — 8%</span><svg viewBox="0 0 600 180" fill="none" role="img" aria-label="Sample equity rising toward an 8 percent profit target"><path d="M0 40H600" stroke="#9dc3e6" strokeDasharray="5 6" opacity=".5"/><path d="M0 165 45 150 90 155 135 132 180 138 225 105 270 116 315 80 360 90 405 60 450 72 500 35 550 42 600 22" stroke="#9DC3E6" strokeWidth="2.5"/></svg></div>
         <div className={s.phaseTrack}>{["Phase 1","Phase 2","Funded"].map((phase,i)=><span key={phase}><i>{i+1}</i>{phase}</span>)}</div><p className={s.visualNote}>Illustrative progress. Eligibility depends on program conditions and risk compliance.</p>
       </div>
@@ -52,18 +52,18 @@ export function Journey(){
   const still=useStaticHero();
   useEffect(()=>{
     const items=ref.current?.querySelectorAll<HTMLElement>("[data-step]");
-    if(!items)return;
+    if(!items || typeof IntersectionObserver === "undefined")return;
     const observer=new IntersectionObserver(entries=>{
       for(const entry of entries)if(entry.isIntersecting)setActive(Number((entry.target as HTMLElement).dataset.step));
     },{rootMargin:"-30% 0px -35% 0px",threshold:0});
     items.forEach(item=>observer.observe(item));return ()=>observer.disconnect();
   },[]);
   return <section ref={ref} className={`${s.section} ${s.journey}`} aria-labelledby="process-title">
-    <div className={s.sectionHeading}><span className={s.eyebrow}>01 / HOW IT WORKS</span><SectionTitle id="process-title" first="A deliberate" accent="way forward."/></div>
+    <div className={s.sectionHeading}><span className={s.eyebrow}>01 / HOW IT WORKS</span><SectionTitle id="process-title" first="Pick a program. Trade on Bybit." accent="Get paid."/></div>
     <div className={s.journeyGrid}>
       <div className={s.stickyVisual}><JourneyVisual active={active}/><div className={s.stepControls} role="group" aria-label="Preview process step">{steps.map((step,i)=><button key={step.title} type="button" aria-pressed={active===i} aria-label={`Preview step ${i+1}: ${step.title}`} onClick={()=>setActive(i)}>0{i+1}</button>)}</div></div>
-      <div className={s.stepList}>{steps.map((step,i)=><article key={step.title} data-step={i} data-active={active===i} className={`${s.glass} ${s.step}`}>
-        <span className={s.stepNumber}>0{i+1}</span><span className={s.smallLabel}>{step.note}</span><h3>{step.title}</h3><Reveal><p>{step.text}</p></Reveal>
+      <div className={s.stepList}>{steps.map((step,i)=><article key={step.title} data-step={i} data-active={active===i} className={s.step}>
+        <span className={s.stepNumber}>0{i+1}</span>{step.note && <span className={s.smallLabel}>{step.note}</span>}<h3>{step.title}</h3><Reveal><p>{step.text}</p></Reveal>
         <div className={s.stepRule}><motion.span initial={false} animate={{scaleX:active===i?1:0}} transition={{duration:still?0:.7,ease}}/></div>
       </article>)}</div>
     </div>
@@ -77,7 +77,7 @@ export function RiskMonitor(){
   const status=state==="breach"?"Rule breached":state==="warning"?"Approaching a risk limit":"Within limits";
   const path=chartPath(equityPoints(day));
   return <section className={`${s.section} ${s.riskSection}`} aria-labelledby="risk-title">
-    <div className={s.riskHeading}><div><span className={s.eyebrow}>02 / THE RISK MONITOR</span><SectionTitle id="risk-title" first="Every move." accent="In perspective."/></div><div className={`${s.glass} ${s.headingNote}`}><Reveal><p>Your challenge progress, risk limits, and reward eligibility. One clear view.</p></Reveal></div></div>
+    <div className={s.riskHeading}><div><span className={s.eyebrow}>02 / THE RISK MONITOR</span><SectionTitle id="risk-title" first="See how close you are" accent="to every limit."/></div><div className={s.headingNote}><Reveal><p>Profit target, daily loss and max drawdown update as you trade. Daily limits are measured in UTC days.</p></Reveal></div></div>
     <Reveal focus={false}><div className={`${s.glass} ${s.riskPanel}`} data-severity={state}>
       <div className={s.grain} aria-hidden="true"/>
       <div className={s.instrumentTop}><h3>Risk Monitor<span> / USD</span></h3><span className={s.sampleBadge}>Sample account</span></div>
@@ -118,7 +118,7 @@ function ProgramCard({index}: {index:number}){
     event.currentTarget.style.setProperty("--pointer-x",`${event.clientX-bounds.left}px`);event.currentTarget.style.setProperty("--pointer-y",`${event.clientY-bounds.top}px`);
   }} onClick={()=>document.querySelector<HTMLButtonElement>('button[data-program-info]')?.click()} aria-label={`View ${program.name} reference program information`}>
     <span className={s.cardSpotlight} aria-hidden="true"/>
-    <span className={s.programTop}><span className={s.eyebrow}>0{index+1} / PROGRAM</span><Arrow/></span>
+    <span className={s.programTop}><span>Program</span><Arrow/></span>
     <h3>{program.name}</h3><p>{program.note}</p>
     <Sparkline values={program.line} id={`program-chart-${index}`}/>
     <div className={s.phaseTrack}>{program.phases.map((phase,i)=><span key={phase}><i>{i+1}</i>{phase}</span>)}</div>
@@ -130,15 +130,15 @@ function ProgramCard({index}: {index:number}){
 
 export function Programs(){
   return <section className={`${s.section} ${s.programSection}`} aria-labelledby="programs-title">
-    <div className={s.sectionHeading}><span className={s.eyebrow}>03 / YOUR STARTING POINT</span><SectionTitle id="programs-title" first="The same ambition." accent="Your own path."/></div>
+    <div className={s.sectionHeading}><span className={s.eyebrow}>03 / YOUR STARTING POINT</span><SectionTitle id="programs-title" first="Choose how" accent="you start."/></div>
     <div className={s.programGrid}>{programs.map((p,i)=><ProgramCard key={p.name} index={i}/>)}</div>
-    <div className={`${s.glass} ${s.programDisclaimer}`}><p>Choose your account size and evaluation path. Your program brings its targets, risk limits, and reward eligibility into focus.</p></div>
+    <div className={s.programDisclaimer}><p>Read the targets, loss limits and payout policy for your chosen program before you pay.</p></div>
   </section>;
 }
 
 export function Payouts(){
   return <section className={`${s.section} ${s.payoutSection}`} aria-labelledby="payout-title">
-    <div><span className={s.eyebrow}>04 / PAYOUT ILLUSTRATION</span><SectionTitle id="payout-title" first="A sample of" accent="the process."/><div className={`${s.glass} ${s.payoutCopy}`}><Reveal><p>Meet your program’s conditions and complete the required review to become eligible for profit-share rewards under the applicable terms. Simulated results do not guarantee future performance.</p></Reveal></div></div>
+    <div><span className={s.eyebrow}>04 / PAYOUT ILLUSTRATION</span><SectionTitle id="payout-title" first="Payouts are real." accent="Review comes first."/><div className={s.payoutCopy}><Reveal><p>Challenge fees and performance rewards are separate. When you qualify, request a reward in USDT, USDC or BTC. The firm reviews and pays it under the payout policy.</p></Reveal></div></div>
     <Reveal className={s.payoutCardWrap} focus={false}><div className={`${s.glass} ${s.payoutCard}`}>
       <div className={s.instrumentTop}><span className={s.eyebrow}>REWARD STATEMENT</span><span className={s.sampleBadge}>Sample</span></div>
       <span className={s.smallLabel}>SAMPLE PAYOUT</span><div className={s.payoutAmount}>$<NumberOnce value={640} decimals={2}/><span>USD</span></div>
@@ -152,8 +152,8 @@ export function Payouts(){
 
 export function Closing(){
   return <section className={s.closing} aria-labelledby="closing-title">
-    <div className={s.closingContent}><span className={s.eyebrow}>MAKE YOUR NEXT MOVE A CONSIDERED ONE.</span><SectionTitle id="closing-title" first="Bring your" accent="discipline."/>
-      <button className={s.primaryCta} type="button" onClick={()=>document.querySelector<HTMLButtonElement>('button[data-program-info]')?.click()}>Explore programs <Arrow/></button>
+    <div className={s.closingContent}><SectionTitle id="closing-title" first="Start your" accent="first challenge." signature/>
+      <button className={s.primaryCta} type="button" onClick={()=>document.querySelector<HTMLButtonElement>('button[data-program-info]')?.click()}>Choose a program <Arrow/></button>
     </div>
     <footer className={`${s.glass} ${s.footer}`}>
       <div className={s.footerTop}><a href="#hero-title" className={s.wordmark}>Funded HUB</a><span className={s.eyebrow}>CRYPTO ONLY. ALWAYS IN PERSPECTIVE.</span><a href="#hero-title">Back to top ↑</a></div>

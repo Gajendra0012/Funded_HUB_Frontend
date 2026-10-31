@@ -1,15 +1,12 @@
+import { sampleMarketSeeds } from "./sample-market-constants";
+
 export type SampleQuote = { symbol: string; price: number; change: number };
 export interface PriceSource {
   readonly snapshot: readonly SampleQuote[];
   subscribe(receive: (quotes: readonly SampleQuote[]) => void): () => void;
 }
 
-export const sampleQuotes: readonly SampleQuote[] = [
-  { symbol: "BTCUSDT", price: 68245.8, change: 2.34 },
-  { symbol: "ETHUSDT", price: 2497.5, change: 1.26 },
-  { symbol: "SOLUSDT", price: 165.2, change: -0.82 },
-  { symbol: "BNBUSDT", price: 592.4, change: .64 },
-];
+export const sampleQuotes: readonly SampleQuote[] = sampleMarketSeeds.map(q => ({symbol:q.symbol,price:q.last,change:q.change24h}));
 
 // Deterministic teaching fixtures. This adapter never requests live market data.
 export function sampleQuoteFrame(tick: number): readonly SampleQuote[] {
