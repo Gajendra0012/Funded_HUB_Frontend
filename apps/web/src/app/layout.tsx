@@ -1,26 +1,27 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
-import { LandingShell } from "@/components/landing/landing-shell";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 import { brand } from "@/config/brand";
-import "./globals.css";
+
+/*
+ * Root layout: only the <html> and <body> shared by every page.
+ * Each group of pages brings its own styles:
+ *   - app/(main)/  → the whole product (landing, challenges, auth, checkout, dashboard, admin), styled by theme.css
+ *   - app/(site)/  → the design-system page, styled by the older globals.css
+ * Keeping them apart means the dark theme and the older light styles never clash.
+ */
 
 export const metadata: Metadata = {
-  title: { default: `${brand.name} | Crypto trading`, template: `%s | ${brand.name}` },
-  description: "A development preview of a crypto-only prop trading platform using simulated Bybit accounts.",
+  title: { default: `${brand.name} — Trade up to $200,000 of our capital`, template: `%s · ${brand.name}` },
+  description: brand.description,
+  applicationName: brand.name,
   robots: { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={GeistSans.variable}>
-      <body>
-        <a className="skip-link" href="#main-content">Skip to content</a>
-        <LandingShell><SiteHeader /></LandingShell>
-        <main id="main-content" tabIndex={-1}>{children}</main>
-        <LandingShell><SiteFooter /></LandingShell>
-      </body>
+    // suppressHydrationWarning: a small script in (main)/layout.tsx sets the saved colour palette on <html> before React loads.
+    <html lang="en" className={GeistSans.variable} data-scroll-behavior="smooth" suppressHydrationWarning>
+      <body>{children}</body>
     </html>
   );
 }

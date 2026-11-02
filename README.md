@@ -11,7 +11,7 @@ bun install --frozen-lockfile
 bun run dev
 ```
 
-Open http://127.0.0.1:3000. The homepage is the Sellix-inspired globe landing. Shared component specimens remain at `/design-system`. No environment variables are required. The landing pairs Instrument Sans with italic Instrument Serif, downloaded at build time through next/font and served locally; background video and its matching first-frame poster are served locally from public/video.
+Open http://127.0.0.1:3000. Shared component specimens remain at `/design-system`. No environment variables are required.
 
 ```sh
 bun run lint
@@ -21,17 +21,27 @@ bun run build
 bun run start
 ```
 
-## Landing
+## What's in the web app
 
-A single full-viewport hero replaces the previous multi-section design. It includes responsive navigation, a two-line entrance reveal, a crossfading globe video, reduced-motion and Save-Data poster fallback, a background pause control, and native information dialogs. The old trading mockups, ticker, risk simulator, program cards, payout strip, and crystal are removed.
+The whole client-approved sample (https://prop-sample.vercel.app/), renamed to Funded HUB:
+- public site, `/challenges` and `/leaderboard`
+- `/login` and `/signup`
+- checkout
+- the trader dashboard (`/dashboard/...`)
+- an admin preview (`/admin`)
 
-All challenge accounts described here use simulated capital on Bybit Demo. Authentication, enrollment, trading execution, purchases, support submissions, and payouts are not connected. Navigation and CTAs explain the intended product without collecting credentials or presenting unapproved fees.
+The home page is the redesigned landing page with 3D models.
+
+Everything is a frontend demo: data lives in the browser and sign-in, payments and payouts are simulated. Use **Continue as Demo Trader**, or press **Shift + D** for Demo Controls.
+
+- `docs/frontend-guide.md`: pages, demo access, where things are, and what changed from the sample.
+- `docs/landing-design.md`: the home page and its 3D.
 
 ## Structure
 
-- `apps/web`: public frontend and landing tests.
+- `apps/web`: the web app (product pages in `src/app/(main)`) and its tests.
 - `packages/ui`: shared components and design tokens.
-- `docs/landing-design.md`: current design and behavior.
+- `docs/frontend-guide.md` and `docs/landing-design.md`: how the web app and home page are built.
 
 Bun links the web app and UI package through the root workspaces. Use `bun install --frozen-lockfile` for reproducible installs. `bun run test` uses Vitest.
 

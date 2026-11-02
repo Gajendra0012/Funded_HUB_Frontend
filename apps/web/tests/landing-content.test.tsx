@@ -1,22 +1,62 @@
-import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { LandingExperience } from "../src/components/landing/landing-experience";
-import { Reveal, SectionTitle } from "../src/components/landing/cinematic-motion";
+import { ACCOUNT_SIZES, MODELS } from "../src/data/plans";
+import {
+  accountSizes,
+  faq,
+  getProgram,
+  globeCities,
+  heroAccount,
+  payoutMethods,
+  popularPlan,
+  programs,
+  samplePayouts,
+  steps,
+} from "../src/data/landing";
 
-describe("complete landing content before browser observers", () => {
-  it("server-renders every section with product content and no placeholders", () => {
-    const html = renderToStaticMarkup(<LandingExperience className=""/>);
-    for (const id of ["how-it-works", "risk-monitor", "programs", "payouts", "next-chapter"]) expect(html).toContain('id="'+id+'"');
-    for (const text of ["Choose a program", "Simulate your day", "Reference figures", "Payouts are real.", "first challenge."]) expect(html).toContain(text);
-    expect(html).not.toContain('aria-busy="true"');
-    expect(html).toContain("MacBook Pro");
-    expect(html).toContain("data-hero-market-window");
-    expect(html.slice(html.indexOf('data-section="how-it-works"'))).not.toMatch(/opacity:0|translateY\(105%\)/);
+// Bybit's restricted countries. The globe must never suggest traders there.
+const BYBIT_RESTRICTED = ["US", "CN", "HK", "SG", "CA", "KP", "CU", "IR", "UZ", "SD", "SY"];
+
+describe("landing content", () => {
+  it("shows the same rules as data/plans.ts, which the challenges page and checkout use", () => {
+    expect([...accountSizes]).toEqual([...ACCOUNT_SIZES]);
+    for (const program of programs) {
+      const model = MODELS[program.id];
+      expect(program.targets.map((t) => t / 100), program.id).toEqual(model.profitTargets);
+      expect(program.dailyLossPct / 100, program.id).toBeCloseTo(model.dailyLossPct);
+      expect(program.maxLossPct / 100, program.id).toBeCloseTo(model.maxLossPct);
+      expect(program.maxLossType.toLowerCase(), program.id).toBe(model.maxLossType);
+      expect(program.minTradingDays, program.id).toBe(model.minTradingDays);
+      expect(program.profitSharePct / 100, program.id).toBeCloseTo(model.rewardShare);
+    }
   });
-  it("keeps reveal content visible and serif opt-in in static markup", () => {
-    const html = renderToStaticMarkup(<Reveal><SectionTitle id="test-title" first="Always" accent="readable"/></Reveal>);
-    expect(html).toContain("readable");
-    expect(html).not.toMatch(/opacity:0|visibility:hidden/);
-    expect(html).not.toContain("serif");
+
+  it("highlights a plan that exists", () => {
+    expect(programs.map((p) => p.id)).toContain(popularPlan.program);
+    expect(accountSizes).toContain(popularPlan.size);
+  });
+
+  it("keeps the hero account consistent with the 2-Step $100K rules", () => {
+    const twoStep = getProgram("two-step");
+    expect(heroAccount.target).toBe(heroAccount.start * (1 + twoStep.targets[0] / 100));
+    expect(heroAccount.dailyLossLimit).toBe((heroAccount.start * twoStep.dailyLossPct) / 100);
+    expect(heroAccount.maxLossFloor).toBe(heroAccount.start * (1 - twoStep.maxLossPct / 100));
+    expect(heroAccount.tradingDays.required).toBe(twoStep.minTradingDays);
+  });
+
+  it("never places globe cities in Bybit-restricted countries", () => {
+    for (const city of globeCities) expect(BYBIT_RESTRICTED).not.toContain(city.country);
+  });
+
+  it("only uses the supported payout currencies", () => {
+    for (const payout of samplePayouts) expect(payoutMethods).toContain(payout.method);
+  });
+
+  it("has four steps and a filled-in FAQ", () => {
+    expect(steps).toHaveLength(4);
+    expect(faq.length).toBeGreaterThanOrEqual(5);
+    for (const item of faq) {
+      expect(item.q.trim()).not.toBe("");
+      expect(item.a.length).toBeGreaterThan(40);
+    }
   });
 });

@@ -1,27 +1,111 @@
-# Funded HUB — cinematic dark landing
+# Landing page guide
 
-The current landing follows DESIGN.md. It keeps the existing blue Earth hero, Instrument Sans / italic Instrument Serif headline, and product copy. The page now continues through How it works, Risk Monitor, Programs, Payouts, and a final CTA with a glass footer. Below-hero paragraphs have a glass surface. The hero headline and paragraph are card-free, directly over the video, per the latest user direction. The public route is dark only; shared design tokens, packages/ui, admin, and backend are unchanged.
+The landing page at `/` follows the client-approved sample (https://prop-sample.vercel.app/): dark navy background, teal → blue → violet accents, glass cards. It adds 3D models and uses Funded HUB's real product facts: crypto only, Bybit Demo, payouts in USDT, USDC or BTC.
 
-## World and performance
+Last updated: 2 November 2026.
 
-The background is fixed. Motion values map the hero exit to planet scale and opacity, exposing the pre-darkened, pre-blurred /video/mid.webp. There is no CSS blur filter on a large fixed layer. The final CTA loads another cropped, slightly rotated video instance near its section. The playback manager always pauses both instances before playing the selected one. In the middle, neither video plays.
+## Where things are
 
-The 42-node, 20 fps 2D network is a dynamic import. It exists only in the middle world, respects the page visibility state, caps pixel density at 1.5, and is omitted for reduced motion and Save-Data. A persistent pause button remains available beyond the hero. Mobile receives /video/hero-mobile.mp4 and no card parallax. The mobile video is about 536 KB; the middle still is about 6 KB. The original 4K source is unchanged.
+| What | File |
+|---|---|
+| The page itself (list of sections, top to bottom) | `apps/web/src/app/(main)/(marketing)/page.tsx` |
+| **All text, numbers and lists** | `apps/web/src/data/landing.ts` |
+| Colours, fonts, effects and animations | `apps/web/src/app/theme.css` (shared with the rest of the app) |
+| One file per section | `apps/web/src/components/landing/sections/` |
+| Small reusable pieces (button, logo, FAQ list, …) | `apps/web/src/components/landing/ui/` |
+| 3D models and scenes | `apps/web/src/components/landing/three/` |
+| Number formatting for the home page | `apps/web/src/components/landing/lib/format.ts` |
+| Navbar, price ticker and footer (shared with /challenges and /leaderboard) | `apps/web/src/components/marketing/` via `app/(main)/(marketing)/layout.tsx` |
+| Tests | `apps/web/tests/landing-*.test.tsx` |
 
-Sections are dynamically imported near the viewport with reserved placeholders. Data visuals use SVG; no charting library, GSAP, WebGL, smooth scrolling dependency, magnetic CTA physics, or continuously scrolling ticker was added. The hero uses a four-second sample quote feed, not a live market connection. Section entry uses Motion and the same easing and duration vocabulary as the hero. Body focus pulls are local entry effects, never large fixed-layer filters.
+## How to change things
 
-## Sample instruments and actions
+- **Text, prices, rules, FAQ:** edit `src/data/landing.ts`. The components read everything from there.
+- **Colours:** change the palettes in `src/config/brand.ts`; they apply to the whole app. Demo Controls can switch between them.
+  - The 3D scenes can't read CSS. Change the same colours in `COLORS` in `three/scene-canvas.tsx`.
+  - The globe has its own copy at the top of `three/globe.tsx`.
+- **Add, remove or reorder a section:** edit the list in `(main)/(marketing)/page.tsx`.
+- **Move the 3D coins:** edit `HERO_PLACEMENTS` or `CTA_PLACEMENTS` in `three/coins-scene.tsx`.
+  - Positions are fractions of the visible area: `x: -1` is the left edge, `1` the right edge.
 
-The process panel has keyboard-operable step previews and a scroll-active step. Its Bybit connection is explicitly illustrative and does not connect an account. The risk slider clamps daily P&L to -6% through +10%, models profit progress from 7.6% and drawdown from 4.4%, and treats profit target completion separately from loss breaches. Gauges expose their actual values and capped meter ranges. Program figures and payout stages are samples, not approved offers or payment evidence. Existing informational dialogs remain available; Programs and How it works navigation also reach the new sections.
+## Sections
 
-## Verification
+| # | Section | File | Notes |
+|---|---|---|---|
+| 1 | Navbar | `components/marketing/Navbar.tsx` | Shared with the other public pages |
+| 2 | Price ticker | `components/marketing/TickerTape.tsx` | Sample prices that move every 1.5 s |
+| 3 | Hero | `hero.tsx`, `hero-dashboard.tsx` | Headline, live sample account card, **3D coins** behind it |
+| 4 | Key facts | `key-facts.tsx` | Product facts, not past results |
+| 5 | How it works | `how-it-works.tsx` | The line fills as you scroll |
+| 6 | Challenge selector | `challenge-selector.tsx` | Program, size, rules in % or $, price |
+| 7 | Global reach | `global-reach.tsx` | **3D globe** with reward arcs from Dubai |
+| 8 | Payouts | `payout-wall.tsx` | Two rows of sample payout cards |
+| 9 | Platform | `platform.tsx`, `platform-chart.tsx` | **3D candlestick chart** and Bybit Demo features |
+| 10 | Leaderboard | `leaderboard.tsx` | Sample top 5 |
+| 11 | Built for traders | `trader-promises.tsx` | Scrolling cards |
+| 12 | FAQ | `faq.tsx` | One answer open at a time |
+| 13 | Final call to action | `final-cta.tsx` | **3D coins** on wide screens |
+| 14 | Footer | `components/marketing/Footer.tsx` | Shared; legal pop-ups and risk disclaimer |
 
-See landing-qa.md for checks, audit fixes, source-pixel contrast calculations, and explicitly unmeasured browser results. Existing test files are preserved; new tests cover the cinematic sample instruments and single-video playback budget.
+## 3D
 
-## Latest refinement
+Every model is built in code. There are no model files to download.
 
-The hero is approximately 1.4x larger on desktop, with a width-limited phone size, generous italic line box, 32px subline gap, 18px supporting text, and a feathered radial scrim. A 30%-height bottom gradient blends into navy. The bottom Sample prices strip and peeking Sample account dashboard use one injected PriceSource adapter with seeded quotes and candles; they tick only after mount while visible and can be paused independently of the world. No live-market connection is implied.
+**Models**
+- **Coin** (`three/coin.tsx`): a dark metal disc with a chrome rim. The glowing Funded HUB logo is on both faces, built from the same points as the SVG logo.
+- **Crystal** (`three/coin.tsx`): a glass gem.
+- **Candles** (`three/candles-scene.tsx`): a fixed, made-up price series. The candles grow out of a grid floor, with a glowing average line.
+- **Globe** (`three/globe.tsx`): uses the small `cobe` library instead of three.js.
 
-Usable content width is 1200px, with Risk Monitor up to 1280px. Glass opacity is .88, with a denser .94 Risk Monitor. Mono labels are at least 12px and body copy at least 17px. Programs sit on a common baseline with no stagger or parallax, show $5K to $200K / up to 90% Reference figures, and retain unique phase structures and sparklines. The payout panel is flat. Marketing copy is confident while Sample labels and the footer risk disclosure remain.
+**How they load** (`three/lazy.tsx`)
+- They never render on the server.
+- They download only when their section comes near the screen.
+- `Safe3D` hides them if the browser has no WebGL, so the rest of the page still works.
 
-See landing-qa.md for current validation and the explicitly unmeasured screenshot, rendered contrast, and Lighthouse results.
+**Performance and accessibility** (`three/scene-canvas.tsx`)
+- Scenes stop drawing while off screen.
+- Screen sharpness (pixel density) is capped at 1.75.
+- Scenes are hidden from screen readers, because they are decoration.
+- With "reduce motion" on, scenes draw one still frame.
+
+**Libraries:** `three`, `@react-three/fiber`, `@react-three/drei`, `cobe`.
+
+## What is sample data
+
+Anything marked **SAMPLE** in `src/data/landing.ts` is illustrative:
+- ticker prices
+- the hero account
+- payout cards and the 24-hour total
+- the reward feed
+- the leaderboard
+
+Prices and rules are the defaults used to show the design. On the page, these are labelled "Preview · sample data", "Example values", "Simulated" or "Sample".
+
+**Before launch:** replace the sample data with real data, and take prices and rules from the admin configuration.
+
+## Buttons and links
+
+The home page buttons work like the sample's:
+- **Start Challenge** opens `/challenges`.
+- **View Live Dashboard Demo** signs in a demo trader and opens `/dashboard`.
+- **The price card** opens checkout for the chosen program and size.
+- **"View full leaderboard"** opens `/leaderboard`.
+
+Prices come from `src/data/plans.ts`, so the home page, `/challenges` and checkout always agree. A test checks that the rules shown on the home page match that file.
+
+## Checks (2 November 2026)
+
+**Automated**
+- Type check, lint, tests (17) and production build all pass.
+- The landing page is generated as a static page.
+
+**In Microsoft Edge**
+- Tested at 1440 px and 390 px wide.
+- No console errors and no sideways scrolling.
+- The 3D scenes render: hero coins, globe, candle chart, closing coins.
+- These work: the pop-up (closes with Escape), program and size switching, % / $ rules, FAQ, mobile menu.
+- In reduced-motion mode, no content stays hidden.
+
+**Download size**
+- About 251 KB of JavaScript (gzipped) loads up front.
+- three.js is in a separate file that loads only near the 3D sections.
