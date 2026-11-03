@@ -19,6 +19,7 @@ import type { ApiResult, PageMeta } from "@/lib/api/types";
 import { useCursorList, useDebouncedValue } from "@/lib/api/use-cursor-list";
 import type { StaffRole } from "@/lib/roles";
 import { ActionDialog, FormError } from "./action-dialog";
+import { FreshCodeField, useFreshCode } from "./fresh-code-field";
 import { useAdminApi } from "./admin-api-provider";
 
 /** The roles the pickers offer, from `GET /admin/roles`. */
@@ -96,6 +97,7 @@ export function AddAdminDialog({ open, formKey, roles, onAdded, ...handlers }: D
 
 function AddAdminForm({ roles, busy, setBusy, onAdded, onClose, onUncertain }: DialogHandlers & { roles: RoleOptions; busy: boolean; setBusy: (busy: boolean) => void; onAdded: (member: StaffMember) => void }) {
   const api = useAdminApi();
+  const fresh = useFreshCode();
   const [text, setText] = useState("");
   const [accountId, setAccountId] = useState<string | null>(null);
   const [roleIds, setRoleIds] = useState<string[]>([]);
@@ -112,13 +114,18 @@ function AddAdminForm({ roles, busy, setBusy, onAdded, onClose, onUncertain }: D
   // The results on screen belong to what's in the box (not to an older search still being replaced).
   const settled = typed === debounced && results.status !== "loading";
   const account = settled ? (results.items.find((item) => item.id === accountId) ?? null) : null;
-  const ready = account !== null && roleIds.length > 0 && roles.status === "ready" && !busy;
+  const ready = account !== null && roleIds.length > 0 && roles.status === "ready" && fresh.complete && !busy;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!ready || !account) return;
     setBusy(true);
     setError("");
+    const problem = await fresh.confirm();
+    if (problem) {
+      setBusy(false);
+      return setError(problem);
+    }
     const result = await api.post("/api/v1/admin/users", { body: { profile_id: account.id, role_ids: roleIds } });
     setBusy(false);
     if (result.ok) return onAdded(result.data);
@@ -199,6 +206,7 @@ function AddAdminForm({ roles, busy, setBusy, onAdded, onClose, onUncertain }: D
       </label>
       {found}
       <RolePicker options={roles} value={roleIds} onChange={setRoleIds} disabled={busy} testId="add-admin-roles" />
+      <FreshCodeField fresh={fresh} testId="add-admin-code" />
       <FormError message={error} testId="add-admin-error" />
       <footer>
         <button type="button" onClick={onClose} disabled={busy} data-testid="add-admin-cancel">
@@ -227,14 +235,20 @@ export function ChangeRolesDialog({ open, formKey, member, roles, onSaved, ...ha
 function ChangeRolesForm({ member, roles, busy, setBusy, onSaved, onClose, onUncertain }: DialogHandlers & { member: StaffMember; roles: RoleOptions; busy: boolean; setBusy: (busy: boolean) => void; onSaved: (member: StaffMember) => void }) {
   const api = useAdminApi();
   const [roleIds, setRoleIds] = useState(() => roleIdsOf(member));
+  const fresh = useFreshCode();
   const [error, setError] = useState("");
-  const ready = roleIds.length > 0 && !sameIds(roleIds, roleIdsOf(member)) && roles.status === "ready" && !busy;
+  const ready = roleIds.length > 0 && !sameIds(roleIds, roleIdsOf(member)) && roles.status === "ready" && fresh.complete && !busy;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!ready) return;
     setBusy(true);
     setError("");
+    const problem = await fresh.confirm();
+    if (problem) {
+      setBusy(false);
+      return setError(problem);
+    }
     const result = await api.patch("/api/v1/admin/users/{id}", { path: { id: member.id }, body: { role_ids: roleIds } });
     setBusy(false);
     if (result.ok) return onSaved(result.data);
@@ -254,6 +268,7 @@ function ChangeRolesForm({ member, roles, busy, setBusy, onSaved, onClose, onUnc
           Choose at least one role. To remove all access, disable the admin instead.
         </p>
       )}
+      <FreshCodeField fresh={fresh} testId="change-roles-code" />
       <FormError message={error} testId="change-roles-error" />
       <footer>
         <button type="button" onClick={onClose} disabled={busy} data-testid="change-roles-cancel">
@@ -288,6 +303,7 @@ function StatusForm({ action, member, busy, setBusy, onDone, onClose, onUncertai
   const api = useAdminApi();
   const [error, setError] = useState("");
   const name = personLabel(member);
+  const fresh = useFreshCode();
 
   function failed(error: ApiError) {
     setBusy(false);
@@ -296,9 +312,14 @@ function StatusForm({ action, member, busy, setBusy, onDone, onClose, onUncertai
   }
 
   async function confirm() {
-    if (busy) return;
+    if (busy || !fresh.complete) return;
     setBusy(true);
     setError("");
+    const problem = await fresh.confirm();
+    if (problem) {
+      setBusy(false);
+      return setError(problem);
+    }
     if (action === "disable") {
       const result = await api.delete("/api/v1/admin/users/{id}", { path: { id: member.id } });
       if (!result.ok) return failed(result.error);
@@ -328,12 +349,13 @@ function StatusForm({ action, member, busy, setBusy, onDone, onClose, onUncertai
           </>
         )}
       </p>
+      <FreshCodeField fresh={fresh} testId="status-code" />
       <FormError message={error} testId="status-error" />
       <footer>
         <button type="button" onClick={onClose} disabled={busy} data-testid="status-cancel">
           Cancel
         </button>
-        <button type="button" className="ui-primary" onClick={() => void confirm()} disabled={busy} data-testid="status-confirm">
+        <button type="button" className="ui-primary" onClick={() => void confirm()} disabled={busy || !fresh.complete} data-testid="status-confirm">
           {busy ? (action === "disable" ? "Disabling…" : "Re-enabling…") : action === "disable" ? "Disable admin" : "Re-enable admin"}
         </button>
       </footer>

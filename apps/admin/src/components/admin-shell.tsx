@@ -8,6 +8,7 @@ import type { NavGroup } from "@/mocks/types";
 import type { ApiError } from "@/lib/api/errors";
 import { signOutToLogin, type LoginReason } from "@/lib/auth/sign-out";
 import { isLivePath } from "@/lib/live-pages";
+import { navCurrent } from "@/lib/navigation";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 import { useAdminApi } from "./admin-api-provider";
 import { Brand } from "./brand";
@@ -65,6 +66,8 @@ export function AdminShell({
 }) {
   const pathname = usePathname();
   const live = isLivePath(pathname);
+  // Every menu address, to mark the item for this page (ADM-03).
+  const navHrefs = navigation.flatMap((group) => group.items.map((item) => item.href));
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobile, setMobile] = useState(false);
@@ -146,7 +149,7 @@ export function AdminShell({
                   href={item.href}
                   aria-label={item.label}
                   title={collapsed && !isMobile ? item.label : undefined}
-                  aria-current={pathname === item.href ? "page" : undefined}
+                  aria-current={navCurrent(pathname, item.href, navHrefs)}
                   onClick={() => setMobile(false)}
                 >
                   <NavIcon name={item.icon} />

@@ -25,6 +25,7 @@ import {
   type SettingValue,
 } from "@/lib/settings";
 import { ActionDialog, FormError } from "./action-dialog";
+import { FreshCodeField, useFreshCode } from "./fresh-code-field";
 import { useAdminApi } from "./admin-api-provider";
 import { ApiErrorPanel } from "./api-error-panel";
 import { LoadingPanel } from "./loading-panel";
@@ -271,7 +272,7 @@ function CountriesSetting({ setting, record, names, onReview }: RowProps) {
   );
 }
 
-/** Review a change, then save it with `PUT /admin/settings/{key}`. AO-7 adds the fresh 2FA code here. */
+/** Review a change, confirm it with a fresh 2FA code (ADM-19), then save it with `PUT /admin/settings/{key}`. */
 function SaveSettingDialog({ review, onClose, onSaved, onUncertain }: { review: Review | null; onClose: () => void; onSaved: (record: SettingRecord) => void; onUncertain: () => void }) {
   const [busy, setBusy] = useState(false);
   return (
@@ -298,13 +299,19 @@ function SaveSettingForm({
 }) {
   const api = useAdminApi();
   const [error, setError] = useState("");
+  const fresh = useFreshCode();
   const { setting, saved, value } = review;
 
   async function save(event: FormEvent) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || !fresh.complete) return;
     setBusy(true);
     setError("");
+    const problem = await fresh.confirm();
+    if (problem) {
+      setBusy(false);
+      return setError(problem);
+    }
     const result = await api.put("/api/v1/admin/settings/{key}", { path: { key: setting.key }, body: { value } });
     setBusy(false);
     if (result.ok) return onSaved(result.data);
@@ -361,12 +368,13 @@ function SaveSettingForm({
         </dl>
       )}
       <p className="small-note">{saved ? "The change is recorded in the audit log." : "This creates the setting. It's recorded in the audit log."}</p>
+      <FreshCodeField fresh={fresh} testId="setting-code" />
       <FormError message={error} testId="setting-dialog-error" />
       <footer>
         <button type="button" onClick={onClose} disabled={busy} data-testid="setting-cancel">
           Cancel
         </button>
-        <button type="submit" className="ui-primary" disabled={busy} data-testid="setting-confirm">
+        <button type="submit" className="ui-primary" disabled={busy || !fresh.complete} data-testid="setting-confirm">
           {busy ? "Saving…" : "Save setting"}
         </button>
       </footer>

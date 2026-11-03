@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 export type StatusState = "profit" | "loss" | "caution" | "info" | "neutral";
 export function StatusChip({ state, children }: { state: StatusState; children: ReactNode }) { return <span className="ui-status" data-state={state}><i aria-hidden="true"/>{children}</span>; }
 export function RoleBadge({ role }: { role: string }) { return <span className="ui-role">{role}</span>; }
 export function EmptyState({ title, description, action }: { title: string; description: string; action?: ReactNode }) { return <div className="ui-empty"><span aria-hidden="true">◇</span><h2>{title}</h2><p>{description}</p>{action}</div>; }
 export function Skeleton({ variant = "line", label = "Loading" }: { variant?: "line" | "avatar" | "card" | "table"; label?: string }) { return <div role="status" aria-label={label} className={"ui-skeleton ui-skeleton-" + variant}>{variant === "table" && Array.from({length:4},(_,i)=><div key={i}/>)}<span className="ui-sr">{label}</span></div>; }
-export function Toast({ message, onClose }: { message: string; onClose: () => void }) { return <div role="status" aria-live="polite" className="ui-toast"><span>{message}</span><button aria-label="Dismiss notification" onClick={onClose}>×</button></div>; }
+// Closes by itself after `duration` ms (ADM-03), but not while the pointer or keyboard focus is on it.
+export function Toast({ message, onClose, duration = 6000 }: { message: string; onClose: () => void; duration?: number }) {
+  const [paused,setPaused]=useState(false); const expire=useEffectEvent(onClose);
+  useEffect(()=>{ if(paused) return; const timer=setTimeout(()=>expire(),duration); return ()=>clearTimeout(timer); },[paused,duration,message]);
+  return <div role="status" aria-live="polite" className="ui-toast" onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)} onFocus={()=>setPaused(true)} onBlur={()=>setPaused(false)}><span>{message}</span><button aria-label="Dismiss notification" onClick={onClose}>×</button></div>;
+}
 
 export function trapDialogFocus(event:KeyboardEvent<HTMLDialogElement>) {
   if(event.key!=="Tab") return;
@@ -18,10 +23,13 @@ export function trapDialogFocus(event:KeyboardEvent<HTMLDialogElement>) {
   else if(!event.shiftKey && document.activeElement===last) {event.preventDefault();first.focus();}
 }
 // Native modal isolation and focus restoration, with explicit in-document Tab wrapping.
+// onClose reports only closes the person makes (Escape, ×, or the browser closing the dialog itself). A close
+// made here, because `open` turned false or the dialog unmounted, isn't reported: otherwise React's development
+// double-run (unmount, then mount again) made a dialog that mounts open report itself as cancelled (ADM-03).
 export function Modal({ open, onClose, title, children, side = false }: { open: boolean; onClose: () => void; title: string; children: ReactNode; side?: boolean }) {
-  const ref = useRef<HTMLDialogElement>(null); const id = useId();
-  useEffect(()=>{ const dialog=ref.current; if (!dialog) return; if(open && !dialog.open) dialog.showModal(); if(!open && dialog.open) dialog.close(); return ()=>{ if(dialog.open) dialog.close(); }; },[open]);
-  return <dialog ref={ref} onKeyDown={trapDialogFocus} className={"ui-modal" + (side ? " ui-drawer" : "")} aria-labelledby={id} onCancel={event=>{event.preventDefault();onClose();}} onClose={onClose}><header><h2 id={id}>{title}</h2><button aria-label="Close dialog" onClick={onClose}>×</button></header>{children}</dialog>;
+  const ref = useRef<HTMLDialogElement>(null); const id = useId(); const closingHere = useRef(false);
+  useEffect(()=>{ const dialog=ref.current; if (!dialog) return; if(open && !dialog.open) dialog.showModal(); if(!open && dialog.open) { closingHere.current=true; dialog.close(); } return ()=>{ if(dialog.open) { closingHere.current=true; dialog.close(); } }; },[open]);
+  return <dialog ref={ref} onKeyDown={trapDialogFocus} className={"ui-modal" + (side ? " ui-drawer" : "")} aria-labelledby={id} onCancel={event=>{event.preventDefault();onClose();}} onClose={()=>{ if(closingHere.current) { closingHere.current=false; return; } onClose(); }}><header><h2 id={id}>{title}</h2><button aria-label="Close dialog" onClick={onClose}>×</button></header>{children}</dialog>;
 }
 export function Drawer(props: { open: boolean; onClose: () => void; title: string; children: ReactNode }) { return <Modal {...props} side/>; }
 export function ConfirmDialog({ open, onClose, onConfirm, title, consequence, confirmLabel = "Confirm preview" }: { open: boolean; onClose: () => void; onConfirm: () => void; title: string; consequence: string; confirmLabel?: string }) { return <Modal open={open} onClose={onClose} title={title}><p>{consequence}</p><footer><button onClick={onClose}>Cancel</button><button className="ui-primary" onClick={onConfirm}>{confirmLabel}</button></footer></Modal>; }

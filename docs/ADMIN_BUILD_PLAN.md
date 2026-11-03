@@ -3,8 +3,8 @@
 **Goal:** build the Funded HUB admin app (`apps/admin`) completely and correctly. We work **one build order at a time**, starting with what Sprint 1 needs.
 
 - Created: 2 Nov 2026
-- Last updated: 3 Nov 2026 (AO-6 done: live settings)
-- Progress: **17 of 70 steps done** (AO-1 ☑ – AO-6 ☑; ADM-18 ◐) · next: **AO-7** (fresh 2FA code before sensitive actions, UI fixes, the Sprint 1 demo check). **ADM-70** (Next.js security fix) is still open: recommended soon, required before staging (AO-8).
+- Last updated: 3 Nov 2026 (AO-7 done: fresh 2FA code before every change, UI fixes, Sprint 1 demo script passes locally)
+- Progress: **20 of 70 steps done** (AO-1 ☑ – AO-7 ☑; ADM-18 ◐) · next: **close Sprint 1**, see [Closing Sprint 1](#closing-sprint-1-after-ao-7-3-nov). First ADM-70 (Next.js security fix, needs your OK); AO-8 (staging) waits for staging.
 
 ---
 
@@ -28,7 +28,7 @@ The client checks it like this before paying, on **staging**:
 | AD1-04 | Roles and permissions view | ☑ Live matrix (AO-4, 3 Nov): 4 roles × 18 permissions | ✅ `GET /admin/roles` (4 roles, 18 permissions) | Nothing | AO-4 ☑ |
 | AD1-05 | Audit log viewer | ☑ Live (AO-5, 3 Nov): newest first, filters, Load more, details with before and after | ✅ `GET /admin/audit-logs` with filters · ❌ IP filter · ❌ actor names | Nothing locally (IP filter and names: G6) | AO-5 ☑ |
 | AD1-06 | System settings | ☑ Live (AO-6, 3 Nov): all 7, each reviewed and saved on its own, with what uses it | ✅ 7 settings, each saved with an audit record | Fresh 2FA code before saving (AO-7) | AO-6 ☑ |
-| AD1-07 | Page protection, permission checks, 12-hour session, 2FA again for sensitive actions | ◐ Page protection and the 12-hour session (AO-2), permission handling, fallback version (AO-3) | ✅ Permission check on every call · ❌ "who am I" · ❌ re-auth check · ❌ 12-hour limit | Step-up 2FA; hiding by permission after G1 | AO-7 |
+| AD1-07 | Page protection, permission checks, 12-hour session, 2FA again for sensitive actions | ☑ Page protection and the 12-hour session (AO-2), permission handling, fallback version (AO-3), a fresh 2FA code before every change (AO-7) | ✅ Permission check on every call · ❌ "who am I" · ❌ re-auth check · ❌ 12-hour limit | Backend checks (G1, G4, G5); hiding by permission after G1 | AO-7 ☑ |
 | — | Live on **staging** | Not deployed | Not deployed | Deploy admin app and backend, create the first admin there | AO-8 |
 
 ✅ = built and tested on backend `dev` · ❌ = missing on the backend (see section 6, "Backend gaps")
@@ -54,6 +54,48 @@ The rough estimate for AO-1 to AO-7 is **10–12 hours of focused work**. That's
   Together these prove the client's check: "admin login requires 2FA; actions appear in the audit log".
 
 Not part of this plan: the Sprint 1 line "Staging site: registration, email verification, login, password reset, 2FA" is the **trader website** (`apps/web`), which still uses the sample's demo login.
+
+### Closing Sprint 1 (after AO-7, 3 Nov)
+
+**Where it stands:** everything the admin panel promises for Sprint 1 works on this computer, and the demo script ([`docs/ADMIN_SPRINT1_DEMO.md`](ADMIN_SPRINT1_DEMO.md)) passes end to end. Sprint 1 is closed when the client sees it on **staging**. What's left, and who owns it:
+
+**A. Needed before the client can accept Sprint 1**
+
+| # | Item | Owner | Status |
+|---|---|---|---|
+| A1 | **Staging** (G8, D7, AO-8). It needs: a deployed backend; hosted Supabase with TOTP 2FA on and a strong password policy (G9); a host for the admin app; `ADMIN_URL` set to its address; the first admin, made with SQL (G7). Also confirm the Mumbai Supabase projects (asymmetric JWT keys, new API keys) and the company AWS account exist. | Manager + backend engineer | Not started; blocks A4 |
+| A2 | **Next.js security update** (ADM-70). 16.3.8 has 2 critical and 1 high advisory; never deploy it. | Frontend | Ready; needs your OK |
+| A3 | **Audit IPs behind a proxy** (G14): set Express `trust proxy` before staging. Otherwise every audit entry there shows the proxy's IP. | Backend engineer | Open |
+| A4 | **Run the demo script on staging** (ADM-69 in AO-8). | Frontend + you | After A1–A3 |
+| A5 | **Push.** 6 commits on frontend `dev` aren't on GitHub: AO-3 – AO-7, plus the website's WO-1. | You decide | Waiting for your OK |
+| A6 | **Restricted countries** (client decision Q11, D9). Locally the list is empty, so sign-up allows every country. Enter Bybit's list on staging, and here. | Manager / client confirm the list; any admin enters it | Open |
+
+**B. Security gaps the backend must close.** The panel only works around them.
+- **G4:** the API doesn't check that a fresh 2FA code came before a change. Also, Supabase accepts a code again for about 90 seconds (checked 3 Nov).
+- **G5:** the API doesn't enforce the 12-hour admin session.
+- **G1:** there's no "who am I" endpoint, ideally one that answers before the code step. Today a non-admin account can set up 2FA before it's turned away.
+- **G9:** hosted Supabase needs a strong password policy.
+- **G2:** an admin can't reset another admin's 2FA. Together with D3, an admin who loses their phone today needs a manual fix in Supabase.
+
+**C. Other backend gaps** (the panel works around each, see section 6):
+- G3 (invites), G6 (audit IP filter and names), G7 (first-admin script), G11 (admin list filter and order), G12 (last login), G15 (request ID).
+- In the contract: G10 (field name `input`), G13 (permission list), G16 (country list), G17 (settings nothing reads).
+
+**D. Decisions** (manager or client, section 7):
+- D1 – D7, as before.
+- New: D8 (a fresh code for every change, or once per few minutes), D9 (the exact restricted-country list), D10 (which payout wallet hold applies).
+
+**E. Admin-app work left.** None of it is needed for the Sprint 1 promise.
+- E1 **Keep the automated checks.** About 300 browser and API checks (AO-2 – AO-7) run from a temporary folder of the chat session. Move them into the repo (Playwright) so they survive and can run in CI.
+- E2 ADM-18, full version (after G1): hide what an admin can't use, and show their roles in the top bar.
+- E3 ADM-17: backup codes (after D3).
+- E4 AO-13: tidy-up (ADM-02 dead preview code, ADM-04 old notes).
+- E5 AO-last: security headers, test IDs everywhere, a phone and accessibility pass.
+- E6 The 18 sample screens stay sample until their API is built. Next: AO-9 – AO-11 (programs and rule sets) for the manager demo on Fri 6 Nov.
+
+**F. Outside this plan**
+- The website's Sprint 1 items: registration, email verification, login, password reset and 2FA on staging (`docs/WEB_BUILD_PLAN.md`, WO-2 – WO-10).
+- 4 Elastic IPs in Mumbai for the Bybit streams, needed in Week 2.
 
 ---
 
@@ -94,7 +136,7 @@ Not part of this plan: the Sprint 1 line "Staging site: registration, email veri
 | **AO-4** | Roles matrix and admin users, live | ADM-05, ADM-34 | Sprint 1 | 2 h | ☑ 3 Nov |
 | **AO-5** | Audit log, live | ADM-35 | Sprint 1 | 1 h | ☑ 3 Nov |
 | **AO-6** | Settings, live | ADM-36 | Sprint 1 | 1 h | ☑ 3 Nov |
-| **AO-7** | Fresh 2FA before sensitive actions, bug fixes, Sprint 1 demo check | ADM-19, ADM-03, ADM-69 | Sprint 1 | 1.5 h | ☐ |
+| **AO-7** | Fresh 2FA before sensitive actions, bug fixes, Sprint 1 demo check | ADM-19, ADM-03, ADM-69 | Sprint 1 | 1.5 h | ☑ 3 Nov |
 | **AO-8** | Admin app on staging | ADM-68 | Sprint 1 (client acceptance) | 1 h + infra | ⏸ needs staging infra |
 | **AO-9** | Programs: list, details, create, edit, status | ADM-20, ADM-21, ADM-22, ADM-23 | Manager demo Fri 6 Nov | 2.5 h | ☐ |
 | **AO-10** | Rule sets: versions, drafts, publish, compare | ADM-30, ADM-31, ADM-32, ADM-33 | Manager demo Fri 6 Nov | 2 h | ☐ |
@@ -200,6 +242,7 @@ Not part of this plan: the Sprint 1 line "Staging site: registration, email veri
   - all checks pass
   - the work is committed
 - **Not in this order:** backend enforcement of the fresh code (gap G4).
+- **Done 3 Nov:** all of the above. The demo script is [`docs/ADMIN_SPRINT1_DEMO.md`](ADMIN_SPRINT1_DEMO.md).
 
 #### AO-8 · Staging
 - **Steps:** ADM-68.
@@ -329,7 +372,7 @@ Programs and rule sets: 22 routes, all `programs.manage` except publishing (`rul
 - **Backend:** Frontend only · **Order:** AO-13
 - **Done when:** the app looks and works the same, and all checks pass.
 
-#### ADM-03 · Fix UI bugs ☐
+#### ADM-03 · Fix UI bugs ☑ *(3 Nov)*
 - **Build:**
   - The sidebar highlights the right item on detail pages and alias pages (`/users`, `/audit`, `/kyc-queue`).
   - The dashboard KYC card links to `/kyc`.
@@ -339,6 +382,13 @@ Programs and rule sets: 22 routes, all `programs.manage` except publishing (`rul
   - The shared `Modal` (packages/ui): a dialog that mounts already open closes itself in React's development double-run, and that close counts as "cancel" (found in AO-3). The 2FA prompt and the action dialogs (`src/components/action-dialog.tsx`, used by admin users and settings) avoid it by staying mounted; fix it in the `Modal` so every dialog is safe.
 - **Backend:** Frontend only · **Order:** AO-7
 - **Done when:** each bug is fixed and covered by a test where possible.
+- **Done 3 Nov:**
+  - **Sidebar** (`src/lib/navigation.ts`): an alias marks the page it shows (`aria-current="page"`). A detail page marks its list (`aria-current="location"`).
+  - **Dashboard:** the KYC card opens `/kyc`.
+  - **Toasts** (packages/ui `Toast`) close after 6 seconds, but not while the pointer or keyboard focus is on them.
+  - **Icon:** `src/app/icon.svg`, the website's icon. The proxy already skips `.svg` files, so the login page shows it too.
+  - **Modal** (packages/ui): `onClose` now reports only closes the person makes. React's development double-run no longer cancels a dialog that mounts open. Tried with a temporary page: it stays open, and Escape reports exactly one close.
+  - Covered by unit tests (sidebar, KYC link) and the AO-7 browser run.
 
 #### ADM-04 · Update the old notes ☐
 - **Build:** fix `docs/admin-preview.md` and `apps/admin/VISUAL_AUDIT.md`:
@@ -672,13 +722,19 @@ where p.email = 'admin@example.com';
   - Now: a Support admin who opens a Finance page sees the permission message.
   - After G1: they don't see that page in the menu at all.
 
-#### ADM-19 · Fresh 2FA code before sensitive actions ☐
+#### ADM-19 · Fresh 2FA code before sensitive actions ☑ *(3 Nov, in the browser; the backend check is G4)*
 - **Build:**
   - Connect the existing confirm + code dialog to a real Supabase 2FA check (`mfa.challenge` + `mfa.verify`) before the action is sent.
   - Used for: role changes, disabling or re-enabling admins, settings changes and, later, payouts and risk actions.
   - Where it goes: every change already runs through one dialog built on `src/components/action-dialog.tsx`. Admin users (AO-4): Add admin, Change roles, Disable / Re-enable in `admin-user-dialogs.tsx`. Settings (AO-6): the review dialog in `settings-screen.tsx`. The code step goes into those forms, before the request is sent.
 - **Backend:** Supabase (the backend doesn't check yet that the code is fresh: gap G4) · **Order:** AO-7
 - **Done when:** a wrong code stops the action, and a right code lets it through.
+- **Done 3 Nov:**
+  - **Where:** every change asks for a 6-digit code in its dialog: Add admin, Change roles, Disable / Re-enable, and every settings save. The button stays off until all 6 digits are typed.
+  - **How it's checked:** `verifyFreshCode` (`src/lib/auth/fresh-code.ts`) runs a new Supabase challenge and verify. The 2FA prompt for MFA_REQUIRED uses the same function.
+  - **Refusals:** a wrong code saves nothing and empties the boxes. If the code can't be checked (no connection), the dialog says so and sends nothing.
+  - **Each change asks again.** Supabase accepts a code again while it's valid (this 30-second window and the one before), so a fresh code can be up to about 90 seconds old. The backend doesn't check any of this yet (G4).
+  - **Tried for real** in the AO-7 browser run: a wrong code (nothing sent), Supabase unreachable (nothing sent), then the right code (sent). The AO-4 and AO-6 runs now type the code too.
 
 ### Sprint 1 screens
 
@@ -767,7 +823,7 @@ where p.email = 'admin@example.com';
 - **Backend:** Decision (D4); no setting exists yet
 - **Done when:** decided and built.
 
-#### ADM-69 · Sprint 1 demo check ☐ *(added 3 Nov)*
+#### ADM-69 · Sprint 1 demo check ☑ on this computer *(3 Nov; staging in AO-8)*
 - **Build:** a short written demo script, run end to end:
   1. Open the admin app while signed out: you're sent to login.
   2. Sign in with the password only: you can't get in.
@@ -779,6 +835,7 @@ where p.email = 'admin@example.com';
   8. Sign out.
 - **Order:** AO-7
 - **Done when:** every line passes on this computer (and on staging in AO-8).
+- **Done 3 Nov (on this computer):** the script is [`docs/ADMIN_SPRINT1_DEMO.md`](ADMIN_SPRINT1_DEMO.md). All 8 steps passed in the AO-7 browser run (31/31): signed-out redirect, password-only refused, the code lets you in, a new admin forced to set up 2FA, add and change role, a setting with a fresh code, both in the audit log with before and after, sign out.
 
 #### ADM-68 · Admin app on staging ⏸ *(added 3 Nov)*
 - **Build:** deploy the admin app with the staging settings. The staging setup needs:
@@ -988,7 +1045,7 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | **G1** | A "who am I" endpoint for admins (e.g. `GET /admin/me`: my member record, roles, permissions). Ideally it also answers before the 2FA step (`aal1`), so the login can turn away non-admin accounts before they set up 2FA. | AD1-07 | Shows the name and email (AO-2); on every page load, one call every role may make tells admins from other accounts, and signs the others out (AO-3); explains 403s; can't hide what you can't use (ADM-18) |
 | **G2** | Reset another admin's 2FA (needs the Supabase admin API on the server) | AD1-03 | "Reset 2FA" shows "Not available yet" |
 | **G3** | Invite or create an admin login by email; today `POST /users` only grants access to an existing account | AD1-03 | "Add admin" picks an account that already signed up |
-| **G4** | Check that a fresh 2FA code was entered before sensitive actions (role changes, disabling admins, settings, payouts, risk actions) | AD1-07 | Asks for a real fresh code in the browser (ADM-19); the API doesn't check it |
+| **G4** | Check that a fresh 2FA code was entered before sensitive actions (role changes, disabling admins, settings, payouts, risk actions), e.g. a `totp` entry in `amr` less than a few minutes old. Note (checked 3 Nov): Supabase accepts the same code again while it's valid, about 90 seconds. | AD1-07 | Asks for a real fresh code in the browser before every change (ADM-19, AO-7); the API doesn't check it |
 | **G5** | Enforce the 12-hour admin session. Today the backend accepts any valid `aal2` token, however old the sign-in is, and Supabase sessions never end on their own. So a stolen refresh token keeps working past 12 hours outside the admin app. Fix: the backend refuses admin tokens whose `amr` password time is over 12 hours old. Don't set Supabase's **Time-box user sessions** to 12 h: it applies to every account in the project, traders included (corrected 3 Nov; the trader plan, `docs/WEB_BUILD_PLAN.md`, sets it to 7 days). | AD1-07 | The admin app ends the session 12 hours after the password sign-in, in `proxy.ts` and in the browser, and signs it out in Supabase (ADM-15) |
 | **G6** | Audit log: an IP filter, and the actor's name or email in each entry | AD1-05 | Filters IP on loaded rows only, and says so. Names come from the admin list for admins who can manage admins; others see "Admin 3cddad6e…" with a note (AO-5) |
 | **G7** | First admin on staging: there is no script, only manual SQL | Sprint 1 | ADM-67's SQL, run by the backend engineer on staging |
@@ -1016,6 +1073,9 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | D5 | **Table totals.** Tables can't show total counts (the API's paging has none). Is that OK? | ADM-10 |
 | D6 | **Legal versions.** Admin screen, or a database migration per version? | ADM-61 |
 | D7 | **Staging for the 4 Nov demo.** Where are the backend, hosted Supabase and admin app hosted, and who deploys them? | AO-8 |
+| D8 | **Fresh 2FA code: for every change, or once per few minutes?** Every change asks today (strict). A short "confirmed" window, for example 5 minutes, makes several changes in a row easier. | ADM-19 |
+| D9 | **The restricted-country list.** Q11: sign-up blocks the countries Bybit doesn't serve. Someone must confirm the exact list (it changes), and whether UAE residents are left out (Q11's note). | Closing A6, ADM-36 |
+| D10 | **Payout wallet hold.** There's a global setting and a value per program's payout policy. Which one applies? | G17, ADM-36 |
 
 ---
 
@@ -1039,6 +1099,7 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | Admin users and roles (ADM-05, ADM-34) | Backend `dev` at `1d4c8bf`: `src/contracts/admin-foundation.ts` (StaffMember, StaffRole, request bodies), `src/contracts/permissions.ts`, `src/api/admin/admin-foundation.service.ts` (the self and last-Admin refusals, the search, the ID order), `src/api/admin/admin.service.ts` (one transaction per change with its audit record; the action is the operation ID), `supabase/seed.sql` (roles, permission descriptions) |
 | Audit log (ADM-35) | Backend `dev` at `1d4c8bf`: `src/contracts/admin-foundation.ts` (AuditRecord, the audit query), `src/api/admin/admin-foundation.service.ts` (`listAdminAuditLogs`: exact action and record type, `created_at` range, newest by ID), `src/api/admin/admin.service.ts` (the only writer: action = operation ID, IP = `request.ip`, request ID = random), `src/contracts/primitives.ts` (Timestamp: ISO 8601 with `Z`; UUID: RFC 9562) |
 | Settings (ADM-36) | Backend `dev` at `1d4c8bf`: `settingSchemas` in `src/api/admin/admin-foundation.service.ts` (the rules per key; `PUT` is an upsert), `src/contracts/iso-country-codes.ts` (249 codes), the sign-up hook `validate_trader_signup` in `supabase/migrations/20261103000100_sprint_1_signup.sql` (reads `restricted_countries` and `min_age_years`), `src/api/signup/signup.controller.ts` (public restricted-countries list), `src/lib/rules/trading-day.ts` (reset time is an input, default 00:00 UTC), `src/contracts/programs.ts` (per-program `wallet_hold_hours`); client decision Q11 in the project's client answers |
+| Fresh 2FA code (ADM-19) | Supabase JS `mfa.challengeAndVerify`; that a code is accepted again within its validity was checked against local Supabase on 3 Nov. Next.js 16.3 bundled docs: `app-icons.md` (`app/icon.svg`) |
 
 ---
 
@@ -1058,3 +1119,4 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | 3 Nov 2026 | AO-4 | **Done.** ADM-05: live roles matrix (4 roles × 18 permissions), one permission list for the app (`src/lib/auth/permissions.ts`) kept equal to the backend's by a test; the 16 old sample permissions removed. ADM-34: live admin users (list and search, add an existing account, change roles, disable, re-enable, details drawer), the backend's refusals shown as it words them; "Reset 2FA" says "Not available yet". Also: the top bar says "Live data" or "Sample data" for each page, and hides the sample clock on live pages; `DataTable` got optional row names, row test IDs, a drawer title and an empty message; the list hook can swap in one edited row; tables keep their screen-reader text inside their scroll box (a phone overflow found by the browser test). Checks: lint ✓, typecheck (both apps) ✓, tests web 29 + admin 129 (20 new) ✓, admin production build ✓, real backend 31/31 ✓, browser 50/50 ✓, AO-3 browser test again 26/26 ✓, AO-2 login test again 39/39 ✓. Contract unchanged at backend `1d4c8bf`. Found: G11, G12, G13. |
 | 3 Nov 2026 | AO-5 | **Done.** ADM-35: live audit log. Newest first, 50 per page with "Load more". The server filters by who, action, record type and UTC days; the screen filters IP on the loaded entries (G6). Actions and records are shown in words; the details drawer shows before and after with the changed fields first. Names come from the admin list when allowed, otherwise short IDs. Read only. The sample audit events were removed, and the top bar marks `/audit-log` and `/audit` as live. Checks: lint ✓, typecheck (both apps) ✓, tests web 29 + admin 140 (11 new) ✓, admin production build ✓, real backend 24/24 ✓, browser 33/33 ✓, again AO-4 50/50, AO-3 26/26, AO-2 39/39 ✓. Found: G14 (audit IPs behind a proxy), G15 (request ID not tied to logs), and that `platform_name` and `support_email` have no saved value yet (noted in ADM-36). |
 | 3 Nov 2026 | AO-6 | **Done.** ADM-36: live settings. All 7 in three groups, each checked before sending, reviewed ("Now → New", or countries to restrict and free) and saved on its own; "not set yet" ones are created by saving; each says whether anything uses it. The restricted-countries editor covers the backend's 249 ISO codes. The backend's refusals show in the dialog; with no answer, the settings load again and the dialog keeps its message. Also: the action-dialog frame is shared by admin users and settings; `outcomeUnknown` moved to `src/lib/api/errors.ts`; the sample settings data was removed; `/settings` is marked live. Checks: lint ✓, typecheck (both apps) ✓, tests web 29 + admin 155 (15 new) ✓, admin production build ✓, real backend 17/17 ✓ (sign-up obeys both settings), browser 39/39 ✓, again AO-5 33/33, AO-4 50/50, AO-3 26/26, AO-2 39/39 ✓. Found: G16 (country list not in the contract), G17 (5 settings nothing reads yet), and that the restricted list is still empty, so sign-up allows every country (client decision Q11 wants Bybit's list). |
+| 3 Nov 2026 | AO-7 | **Done.** ADM-19: a fresh 2FA code before every change (add admin, change roles, disable, re-enable, each setting), checked with Supabase; a wrong or uncheckable code sends nothing. ADM-03: sidebar marking on alias and detail pages, the KYC card link, self-closing toasts (paused while hovered or focused), the app icon, and the shared Modal's development double-run fix. ADM-69: demo script written (`docs/ADMIN_SPRINT1_DEMO.md`) and passed end to end locally. Also: the 2FA prompt uses the same code check. Checks: lint ✓, typecheck (both apps) ✓, tests web 29 + admin 162 (7 new) ✓, admin production build ✓, AO-7 browser 31/31 ✓; again AO-6 39/39 + 17/17, AO-5 33/33, AO-4 50/50, AO-3 26/26, AO-2 39/39 ✓. Found: Supabase accepts a code again while it's valid (added to G4); new decisions D8 – D10; the Sprint 1 close-out list (section 1). |

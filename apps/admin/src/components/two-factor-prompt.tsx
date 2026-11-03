@@ -2,17 +2,12 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { CodeInput, Modal } from "@funded-hub/ui";
-import { loginErrorMessage } from "@/lib/auth/login-step";
-import { getBrowserSupabase } from "@/lib/supabase/browser";
-
-const CODE_PATTERN = /^\d{6}$/;
+import { CODE_PATTERN, verifyFreshCode } from "@/lib/auth/fresh-code";
 
 /**
  * Asks for the 6-digit 2FA code when the backend answers MFA_REQUIRED (ADM-09), then the call is
- * sent again. The same prompt is the base for "fresh 2FA before sensitive actions" (ADM-19).
- *
- * Keep it mounted and switch `open`: a dialog that mounts already open closes itself in React's
- * development double-run, and the close would count as "cancel".
+ * sent again. It checks the code like the step before sensitive changes (ADM-19): `verifyFreshCode`.
+ * It stays mounted and only switches `open`.
  */
 export function TwoFactorPrompt({ open, onDone }: { open: boolean; onDone: (verified: boolean) => void }) {
   const [code, setCode] = useState("");
@@ -37,17 +32,9 @@ export function TwoFactorPrompt({ open, onDone }: { open: boolean; onDone: (veri
     if (!CODE_PATTERN.test(code)) return;
     setBusy(true);
     setError("");
-    const mfa = getBrowserSupabase().auth.mfa;
-    const { data: factors, error: listError } = await mfa.listFactors();
-    const factor = factors?.totp[0];
-    if (listError || !factor) {
-      setError(listError ? loginErrorMessage(listError, "credentials") : "No authenticator is set up for this account. Sign out and sign in again to set one up.");
-      setBusy(false);
-      return;
-    }
-    const { error: verifyError } = await mfa.challengeAndVerify({ factorId: factor.id, code });
-    if (verifyError) {
-      setError(loginErrorMessage(verifyError, "code"));
+    const result = await verifyFreshCode(code);
+    if (!result.ok) {
+      setError(result.message);
       setCode("");
       setBusy(false);
       return;
