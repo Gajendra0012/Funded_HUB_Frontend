@@ -8,6 +8,11 @@ Visual work only, in apps/admin and packages/ui. No API calls, no auth logic, no
 
 The admin must feel like the same product as the landing in apps/web. Do NOT invent new colors, fonts, radii or glass values. Reuse the existing tokens and glass-panel/glass-light definitions in packages/ui, and the palette, Geist and Geist Mono already in use. Only ADD admin-specific tokens when nothing existing fits (surface levels, row density, status colors), and document each addition in DESIGN.md. Raise panel fill opacity for tables and forms where needed for contrast, and say so in the Admin section. The only brand moment is the /login page: a blurred, darkened still of the globe (reuse /video/mid.webp) behind a centered glass card, with the logo and an italic serif accent line. No video there.
 
+**Colour update (2 November 2026).** The admin colours were changed for readability at the user's request. The old all-navy palette made the panels, tables and drawers blend together.
+- **What changed:** the admin now uses the `--admin-*` palette in packages/ui (`styles.css`): dark neutral layers plus the web app's dark theme accents. See DESIGN.md › Admin palette.
+- **Changing colours:** change them in that palette only, and keep every text colour at least 4.5:1 on every admin layer.
+- **Unchanged:** layout, fonts, radii and the rules above.
+
 ## Token inventory
 
 apps/admin uses no raw hex, rgb/rgba, radius or font-family values. Reference tokens defined in packages/ui for colors, border radii and font families.

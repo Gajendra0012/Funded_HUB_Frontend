@@ -26,22 +26,40 @@ Run lint, types, existing tests and production build. Regression-check complete 
 
 The admin is the landing product at operational density: dark, calm, no video, 3D, parallax or entry animation. Only 150–200ms control transitions (180ms default); respect reduced motion. Keep Geist UI, Geist Mono numbers/IDs/timestamps and Instrument Serif italic only for the login signature. Every timestamp is explicitly labelled UTC. Existing landing tokens, glass values, control/card radii and tests remain intact.
 
-Admin additions are scoped to .admin-theme in packages/ui; nothing changes the landing palette:
+### Admin palette (updated 2 November 2026, for readability)
 
-| Token | Source and reason |
-| --- | --- |
-| --admin-background | Existing --accent-3 (#0B2545), alias for workspace background. |
-| --admin-surface-1 | 94% accent-3 / 6% existing white, for sidebar and sticky headers. |
-| --admin-surface-2 | 92% accent-1 / 8% existing white, for hover, selection and raised controls. |
-| --admin-border | Existing glass-light-border, shared hairline. |
-| --admin-text / --admin-muted | Existing white / landing-tint, readable operational text. |
-| --admin-fill | Existing accent-3 at 96% opacity: tables, forms and dialogs raise panel fill opacity so content stays legible. No new glass recipe. |
-| --admin-profit / loss / caution / info / neutral | Aliases of data-profit / data-loss / signal-warning / landing-tint / landing-tint. Only data states receive semantic color; navigation, roles and environments stay neutral. Labels distinguish states without relying on color. |
-| --admin-row / --admin-row-compact | 44px / 36px, consistent table density. |
-| --admin-transition | 180ms, restrained control transitions. |
+**Why it changed.** The first admin palette put the background, sidebar, panels, table headers and drawers all in one navy. It looked readable on paper (white text 15:1), but areas blended together. Table row lines were navy on navy, and blue links measured only 3.5:1.
 
-Panels use glass-panel-background, glass-panel-border, glass-panel-shadow and glass-panel-still-filter; light controls use glass-light values. Safe usage bars use brand blue, near-limit amber at 80%, breached red at 100%; profit target progress stays blue. Blue accent-2 provides focus rings and active navigation. No new colors, fonts, radii or glass values.
+**The new palette.**
+- Dark neutral layers with clear steps.
+- The web app's dark theme accents (from the client-approved sample), so the admin and the website feel like one product.
+- The raw values exist only in packages/ui (`:root`, `--admin-*` palette). apps/admin still uses no raw colours.
+
+| Layer or role | Token (value) | Used for |
+| --- | --- | --- |
+| Canvas | --admin-canvas (#05070C) | Page background, top bar |
+| Layer 1 | --admin-layer-1 (#0E131D) | Panels, tables, inputs, dialogs, drawers |
+| Layer 2 | --admin-layer-2 (#141B29) | Sidebar, table headers, menus |
+| Layer 3 | --admin-layer-3 (#1C2537) | Hover, selected rows, progress tracks |
+| Lines | --admin-line (white 9%), --admin-line-strong (white 16%) | Borders, table row separators |
+| Text | --admin-ink (#E9EEF6), --admin-ink-muted (#9BA7BA) | Main and secondary text |
+| Accent | --admin-blue (#38B6FF) with --admin-on-blue (#04121C) text | Links, focus rings, active navigation, primary buttons |
+| States | --admin-green (#2FD89A), --admin-red (#FF6B78), --admin-amber (#F5B942), --admin-sky (#5CC8FF) | Profit, loss, caution, info |
+
+**Contrast (WCAG), worst case across all four background layers:**
+- main text: 13.2:1
+- muted text: 6.3:1
+- blue accent: 6.8:1
+- red: 5.6:1
+- the other status colours: 8:1 or more
+- dark text on the blue button: 8.4:1
+
+**How the admin uses it.** `.admin-theme` maps the semantic tokens to the palette, without changing any layout:
+- `--admin-background`, `-surface-1/2`, `-fill`, `-text`, `-muted` and the state colours;
+- inside the admin scope, the shared names point at the palette too: `--accent-1` = row lines, `--accent-2` = blue, `--accent-3` = canvas, and the glass panel and light values.
+
+Panels are solid layer-1 surfaces with a hairline border and a soft shadow, no blur. Dialog and drawer backdrops darken to near-black instead of navy. Usage bars keep their states: blue when safe, amber near the limit, red when breached. `--admin-row` and `--admin-row-compact` (44px / 36px) and `--admin-transition` (180ms) are unchanged.
 
 The only brand moment is /login: the exact landing /video/mid.webp still, blurred and darkened using existing glass filters and navy, with the existing logo, centered glass card and an italic Instrument Serif accent. It never plays video. Login and reauthentication are visual previews only. All new operational fixtures live in apps/admin/src/mocks with one types.ts and enter components through props. Legacy preview reducers and tests are retained as isolated fixtures; rendered action buttons only open dialogs or report a Sample toast and do not mutate records. /dev/components returns 404 in production. Existing user, role, audit and settings screens are restyled rather than rebuilt; new routes start with a titled empty state.
 
-Admin readability refinements: body and table cells are 14px, IDs/numeric values 13px, and all secondary labels are at least 12px. Muted copy retains the existing landing-tint token and is checked against each navy surface at a minimum 4.5:1 ratio. --font-display in the shared admin scope aliases the existing Instrument Serif variable; no new font is introduced. Funded HUB uses the landing’s text wordmark with Admin as its subline. The mock header clock and Snapshot label share SAMPLE_NOW; event and check timestamps derive from that fixture anchor. KPI sparklines stay brand blue; only delta text uses profit/loss colors.
+Admin readability refinements: body and table cells are 14px, IDs/numeric values 13px, and all secondary labels are at least 12px. Muted copy uses --admin-ink-muted and is at least 6.3:1 on every admin surface (minimum required 4.5:1). --font-display in the shared admin scope aliases the existing Instrument Serif variable; no new font is introduced. Funded HUB uses the landing’s text wordmark with Admin as its subline. The mock header clock and Snapshot label share SAMPLE_NOW; event and check timestamps derive from that fixture anchor. KPI sparklines stay brand blue; only delta text uses profit/loss colors.
