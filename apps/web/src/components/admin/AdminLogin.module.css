@@ -1,0 +1,64 @@
+.card {
+  min-width: 0;
+}
+
+.card :global(.ops-form) {
+  display: grid;
+  gap: .85rem;
+  min-width: 0;
+}
+
+.card :global(.ops-form) h2 {
+  font-size: 1.125rem;
+  font-weight: 650;
+}
+
+.card :global(.ops-form) p {
+  color: var(--muted);
+  font-size: .875rem;
+  line-height: 1.5;
+}
+
+.card :global(.ui-code) {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: clamp(.25rem, 1.7vw, .65rem);
+  width: 100%;
+}
+
+.card :global(.ui-code) input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: clamp(2.5rem, 10vw, 3.25rem);
+  padding: 0;
+  text-align: center;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.card :global(.ui-primary) {
+  min-height: 2.75rem;
+  background: var(--accent-2);
+  color: #051018;
+  font-weight: 650;
+}
+
+.card :global(.ui-primary):disabled {
+  opacity: .48;
+}
+
+.card :global(.manual-key) {
+  display: grid;
+  gap: .35rem;
+  overflow-wrap: anywhere;
+  font-size: .875rem;
+}
+
+.card :global(.qr-code) {
+  width: min(100%, 184px);
+  height: auto;
+  padding: .5rem;
+  border-radius: .75rem;
+  background: white;
+}

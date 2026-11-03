@@ -13,25 +13,9 @@ bun run dev
 
 Open http://127.0.0.1:3000. Shared component specimens remain at `/design-system`. The web app needs no environment variables.
 
-### Admin app
-
-```sh
-cp apps/admin/.env.example apps/admin/.env.local   # then fill in the values
-bun run dev:admin                                  # http://127.0.0.1:3101
-```
-
-The admin app needs three settings: the Supabase address, the Supabase publishable key and the backend address. Without them, `next dev`, `next build` and `next start` stop with a message that lists what's missing.
-
-For the full local stack, see `docs/ADMIN_BUILD_PLAN.md`, step ADM-67. It covers:
-- the backend's `dev` branch
-- local Supabase with 2FA on
-- the first admin
-
-**Signing in:** open http://127.0.0.1:3101 and sign in with an admin account (ADM-67 creates the first one). The first sign-in sets up 2FA with an authenticator app (scan the QR code); every later sign-in asks for the 6-digit code. Admin sessions end 12 hours after sign-in.
-
 ### Checks
 
-These cover both apps. `bun run build` needs the admin settings above.
+These checks cover the web app.
 
 ```sh
 bun run lint
@@ -40,7 +24,7 @@ bun run test
 bun run build
 ```
 
-After a build, `bun run start` serves the web app and `bun run start:admin` serves the admin app.
+After a build, `bun run start` serves the web app.
 
 ## What's in the web app
 
@@ -66,4 +50,12 @@ Everything is a frontend demo: data lives in the browser and sign-in, payments a
 
 Bun links the web app and UI package through the root workspaces. Use `bun install --frozen-lockfile` for reproducible installs. `bun run test` uses Vitest.
 
-The separate local admin preview is independent of this landing. Optional `dev:admin` and `start:admin` commands require that app to be present. This redesign does not change its implementation.
+## Admin dashboard
+
+Open /dashboard for the live admin workspace. Set these public values in apps/web/.env.local and restart the web server:
+
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+- NEXT_PUBLIC_ADMIN_API_URL
+
+The backend must allow the web app origin through APP_URL or ADMIN_URL. Sign in with an active admin identity and complete authenticator-app verification. The dashboard reads staff, roles, traders, programs, program rule versions, settings and audit records from the admin API. The Results section requires a backend endpoint for evaluated accounts.

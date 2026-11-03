@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { OverviewView } from "@/components/dashboard/OverviewView";
+import { LiveAdminDashboard } from "@/components/admin/LiveAdminDashboard";
 
-export const metadata: Metadata = { title: "Overview" };
+export const metadata: Metadata = { title: "Admin dashboard" };
 
 export default function DashboardPage() {
-  return <OverviewView />;
+  return <LiveAdminDashboard />;
 }

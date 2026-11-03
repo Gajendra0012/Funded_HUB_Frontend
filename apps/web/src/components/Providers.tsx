@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { MotionConfig } from "motion/react";
 import { DemoControls } from "@/components/DemoControls";
 import { Toaster } from "@/components/ui/Toaster";
@@ -9,6 +10,7 @@ import { hydrateDemoStore } from "@/lib/store";
 import { initWallets } from "@/lib/wallet";
 
 export function Providers({ children }: { children: ReactNode }) {
+  const adminSignIn = usePathname() === "/admin/login";
   useEffect(() => {
     void hydrateDemoStore();
     initWallets();
@@ -17,9 +19,9 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <MotionConfig reducedMotion="user">
       {children}
-      <ConnectWalletModal />
+      {!adminSignIn && <ConnectWalletModal />}
       <Toaster />
-      <DemoControls />
+      {!adminSignIn && <DemoControls />}
     </MotionConfig>
   );
 }

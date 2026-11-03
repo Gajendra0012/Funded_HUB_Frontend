@@ -16,11 +16,14 @@ const SalesDonut = dynamic(() => import("./AdminCharts").then((m) => m.SalesDonu
   loading: () => <Skeleton className="h-[190px] rounded-xl" />,
 });
 
-export function AdminView() {
+export function AdminView({ sampleLabel = false }: { sampleLabel?: boolean }) {
   return (
     <div className="space-y-6">
       <div id="overview" className="scroll-mt-24">
-        <h2 className="text-2xl font-semibold tracking-tight">Firm overview</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-2xl font-semibold tracking-tight">Firm overview</h2>
+          {sampleLabel && <span className="rounded-full border border-line px-2 py-0.5 text-xs text-muted">Sample data</span>}
+        </div>
         <p className="text-sm text-muted">The numbers the business runs on — revenue, pass rate and the payout ratio.</p>
       </div>
       <KpiGrid />
