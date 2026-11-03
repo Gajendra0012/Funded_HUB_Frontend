@@ -11,15 +11,34 @@ bun install --frozen-lockfile
 bun run dev
 ```
 
-Open http://127.0.0.1:3000. Shared component specimens remain at `/design-system`. No environment variables are required.
+Open http://127.0.0.1:3000. Shared component specimens remain at `/design-system`. The web app needs no environment variables.
+
+### Admin app
+
+```sh
+cp apps/admin/.env.example apps/admin/.env.local   # then fill in the values
+bun run dev:admin                                  # http://127.0.0.1:3101
+```
+
+The admin app needs three settings: the Supabase address, the Supabase publishable key and the backend address. Without them, `next dev`, `next build` and `next start` stop with a message that lists what's missing.
+
+For the full local stack, see `docs/ADMIN_BUILD_PLAN.md`, step ADM-67. It covers:
+- the backend's `dev` branch
+- local Supabase with 2FA on
+- the first admin
+
+### Checks
+
+These cover both apps. `bun run build` needs the admin settings above.
 
 ```sh
 bun run lint
 bun run typecheck
 bun run test
 bun run build
-bun run start
 ```
+
+After a build, `bun run start` serves the web app and `bun run start:admin` serves the admin app.
 
 ## What's in the web app
 

@@ -4,7 +4,7 @@
 
 - Created: 2 Nov 2026
 - Last updated: 3 Nov 2026 (rebuilt around the backend's new admin API and the Sprint 1 deadline)
-- Progress: **0 of 69 steps done** · next order: **AO-1**
+- Progress: **3 of 69 steps done** (AO-1 ☑) · next order: **AO-2**
 
 ---
 
@@ -90,7 +90,7 @@ Not part of this plan: the Sprint 1 line "Staging site: registration, email veri
 
 | Order | Goal | Steps | Needed for | Rough time | Status |
 |---|---|---|---|---|---|
-| **AO-1** | Run the real backend locally and create the first admin | ADM-67, ADM-07, ADM-01 | Sprint 1 | 1 h | ☐ |
+| **AO-1** | Run the real backend locally and create the first admin | ADM-67, ADM-07, ADM-01 | Sprint 1 | 1 h | ☑ 3 Nov |
 | **AO-2** | Login with mandatory 2FA, page protection, sign out | ADM-11, ADM-12, ADM-13, ADM-14, ADM-15, ADM-16 | Sprint 1 | 3 h | ☐ |
 | **AO-3** | One API helper, paging, error and permission handling | ADM-08, ADM-09, ADM-10, ADM-06, ADM-18 | Sprint 1 | 2 h | ☐ |
 | **AO-4** | Roles matrix and admin users, live | ADM-05, ADM-34 | Sprint 1 | 2 h | ☐ |
@@ -307,7 +307,7 @@ Programs and rule sets: 22 routes, all `programs.manage` except publishing (`rul
 
 ### Base and setup
 
-#### ADM-01 · Add the admin app to the main checks ☐
+#### ADM-01 · Add the admin app to the main checks ☑ *(3 Nov: root `typecheck`, `test` and `build` run both apps; new `build:admin`)*
 - **Build:** make the root `typecheck`, `test` and `build` scripts check `apps/admin` too. Today they only check `apps/web`.
 - **Backend:** Frontend only · **Order:** AO-1
 - **Done when:** `bun run typecheck`, `bun run test` and `bun run build` cover both apps and pass.
@@ -378,7 +378,19 @@ Programs and rule sets: 22 routes, all `programs.manage` except publishing (`rul
 - **Backend:** Frontend only · **Order:** AO-3
 - **Done when:** a crashing page shows the error page, not a blank screen, and Retry works.
 
-#### ADM-67 · Run the backend locally and create the first admin ☐ *(added 3 Nov)*
+#### ADM-67 · Run the backend locally and create the first admin ☑ *(added and done 3 Nov)*
+
+**Done on 3 Nov:**
+- **Backend `dev` (`4b81f8d`)** runs from `E:\Prop\Funded_Hub_backend-dev`, a separate git worktree. The `saurabh-backend` checkout is untouched.
+- **Local Supabase** runs with 2FA on and reuses the existing local database: 7 migrations, 4 roles, 18 permissions.
+- **The cache (Valkey)** runs from the backend's Docker Compose file.
+- **The API** answers `/health` and `/health/ready` (database up, Redis up).
+- **CORS** allows only `http://127.0.0.1:3101` (and the web app).
+- **First admin:** `admin@example.com`, profile and membership ACTIVE, role ADMIN, no 2FA set up yet. The password is kept outside the repo.
+- **End-to-end check, 9/9 passed:**
+  - a password-only session is refused (`403 MFA_REQUIRED`)
+  - after a TOTP code the session is `aal2`, and `GET /roles`, `/users` and `/audit-logs` answer 200
+  - the temporary authenticator was then removed, so AO-2 starts from a fresh 2FA setup
 - **Build:**
   1. **Backend `dev` in its own folder** (so the local `saurabh-backend` checkout is untouched):
 
@@ -414,7 +426,22 @@ where p.email = 'admin@example.com';
 - **Backend:** Live + Supabase · **Order:** AO-1
 - **Done when:** `/health` answers, and the first admin exists with the ADMIN role.
 
-#### ADM-07 · App settings (environment) ☐
+#### ADM-07 · App settings (environment) ☑ *(3 Nov)*
+
+**Done on 3 Nov:**
+- **Files:**
+  - `apps/admin/.env.example` (committed)
+  - `.env.local` (git-ignored)
+  - `src/config/env.ts`: the checker
+  - `next.config.ts`: runs the check for `next dev`, `next build` and `next start`, and skips it for `next typegen`
+- **The checker refuses:**
+  - missing values
+  - a secret key
+  - non-publishable keys
+  - plain http except localhost
+  - malformed addresses
+- **Tests:** 10 in `tests/env.test.ts`.
+- **Tried for real:** without `.env.local` the app stops with the message; with it, every page loads.
 - **Build:**
   - `apps/admin/.env.example` (committed), plus `.env.local` (not committed) with:
     - `NEXT_PUBLIC_SUPABASE_URL`
@@ -848,4 +875,5 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | 2 Nov 2026 | – | Plan created. Earlier the same day: `apps/admin` added to the workspaces (`package.json`, `bun.lock`), so the admin app installs and runs. |
 | 2 Nov 2026 | – | Added "What we can build before the backend is finished" and a sample mode for ADM-09, because the backend wasn't finished. |
 | 2 Nov 2026 | – | Colours only (not a numbered step): new readable admin palette in packages/ui (dark neutral layers, web-theme accents), at the user's request. See DESIGN.md › Admin palette. |
+| 3 Nov 2026 | AO-1 | **Done.** ADM-67: backend `dev` running locally in a separate worktree, first admin created, 2FA chain tested end to end (9/9). ADM-07: settings file plus a startup check, with 10 tests. ADM-01: root checks cover both apps. Checks: lint ✓, typecheck (web and admin) ✓, tests 15 + 26 ✓, both production builds ✓. README updated. |
 | 3 Nov 2026 | – | **Rebuilt as build orders (AO-1 …).** Reasons: the backend's `dev` branch now has a live admin API (35 routes, contract v1.1.0, `4b81f8d`), and Sprint 1 promises "admin panel with mandatory 2FA, roles and audit log" for the Wed 4 Nov demo. Changes: Sprint 1 orders come first; programs, rule sets and trader basics moved from "API defined" to "Live"; the sample mode in ADM-09 was dropped (the screens it served now have a live API); ADM-34 – ADM-36 rewritten to the real API; added ADM-67 (local backend + first admin), ADM-68 (staging) and ADM-69 (Sprint 1 demo check); added backend gaps G1–G9 and question D7. |

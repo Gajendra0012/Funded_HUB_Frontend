@@ -7,12 +7,13 @@
   },
   "scripts": {
     "dev": "bun run --cwd apps/web dev",
-    "build": "bun run --cwd apps/web build",
+    "build": "bun run --cwd apps/web build && bun run --cwd apps/admin build",
     "start": "bun run --cwd apps/web start",
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "bun run --cwd apps/web typecheck",
-    "test": "bun run --cwd apps/web test",
+    "typecheck": "bun run --cwd apps/web typecheck && bun run --cwd apps/admin typecheck",
+    "test": "bun run --cwd apps/web test && bun run --cwd apps/admin test",
     "dev:admin": "bun run --cwd apps/admin dev",
+    "build:admin": "bun run --cwd apps/admin build",
     "start:admin": "bun run --cwd apps/admin start"
   },
   "devDependencies": {
