@@ -3,8 +3,8 @@
 **Goal:** build the Funded HUB admin app (`apps/admin`) completely and correctly. We work **one build order at a time**, starting with what Sprint 1 needs.
 
 - Created: 2 Nov 2026
-- Last updated: 3 Nov 2026 (AO-4 done: live roles matrix and admin users)
-- Progress: **15 of 70 steps done** (AO-1 ☑, AO-2 ☑, AO-3 ☑, AO-4 ☑; ADM-18 ◐) · next: **AO-5** (audit log). **ADM-70** (Next.js security fix) is still open: recommended soon, required before staging (AO-8).
+- Last updated: 3 Nov 2026 (AO-5 done: live audit log)
+- Progress: **16 of 70 steps done** (AO-1 ☑, AO-2 ☑, AO-3 ☑, AO-4 ☑, AO-5 ☑; ADM-18 ◐) · next: **AO-6** (settings). **ADM-70** (Next.js security fix) is still open: recommended soon, required before staging (AO-8).
 
 ---
 
@@ -26,7 +26,7 @@ The client checks it like this before paying, on **staging**:
 | AD1-02 | Admin login with **mandatory 2FA** | ☑ Real Supabase login, 2FA setup on first login, 2FA code on every login (AO-2, 3 Nov) | ✅ Every admin call requires a 2FA session (`aal2`); local 2FA switched on | Nothing locally; staging (AO-8) | AO-2 ☑ |
 | AD1-03 | Admin users: list, add, disable, reset 2FA, roles | ☑ Live (AO-4, 3 Nov): list and search, add an existing account, change roles, disable, re-enable; "Reset 2FA" says "Not available yet" | ✅ List, add (existing account), change roles, disable/enable · ❌ reset 2FA · ❌ email invites | Nothing locally; fresh 2FA code before each change (AO-7) | AO-4 ☑ |
 | AD1-04 | Roles and permissions view | ☑ Live matrix (AO-4, 3 Nov): 4 roles × 18 permissions | ✅ `GET /admin/roles` (4 roles, 18 permissions) | Nothing | AO-4 ☑ |
-| AD1-05 | Audit log viewer | Preview with sample data | ✅ `GET /admin/audit-logs` with filters · ❌ IP filter · ❌ actor names | Connect the screen to the API | AO-5 |
+| AD1-05 | Audit log viewer | ☑ Live (AO-5, 3 Nov): newest first, filters, Load more, details with before and after | ✅ `GET /admin/audit-logs` with filters · ❌ IP filter · ❌ actor names | Nothing locally (IP filter and names: G6) | AO-5 ☑ |
 | AD1-06 | System settings | Preview (restricted countries only) | ✅ 7 settings, each saved with an audit record | Connect the screen to the API | AO-6 |
 | AD1-07 | Page protection, permission checks, 12-hour session, 2FA again for sensitive actions | ◐ Page protection and the 12-hour session (AO-2), permission handling, fallback version (AO-3) | ✅ Permission check on every call · ❌ "who am I" · ❌ re-auth check · ❌ 12-hour limit | Step-up 2FA; hiding by permission after G1 | AO-7 |
 | — | Live on **staging** | Not deployed | Not deployed | Deploy admin app and backend, create the first admin there | AO-8 |
@@ -34,9 +34,9 @@ The client checks it like this before paying, on **staging**:
 ✅ = built and tested on backend `dev` · ❌ = missing on the backend (see section 6, "Backend gaps")
 
 **Short answer: what's left for Sprint 1.**
-- **Done (AO-1 – AO-4):** local stack, real login with mandatory 2FA, page protection, 12-hour session, one API helper with paging, error pages, the admin access check, and live roles and admin users (each change is in the audit log).
-- **Frontend work left (AO-5 to AO-7):**
-  - live audit log and settings
+- **Done (AO-1 – AO-5):** local stack, real login with mandatory 2FA, page protection, 12-hour session, one API helper with paging, error pages, the admin access check, live roles and admin users, and the live audit log that shows each of their changes.
+- **Frontend work left (AO-6 and AO-7):**
+  - live settings
   - a fresh 2FA check before sensitive actions
 - **Deployment to staging (AO-8):** needs a staging backend and hosted Supabase. Those are not confirmed yet; ask the manager.
 - **Backend gaps:** a few small ones (section 6). The panel works around each, but the backend should close them.
@@ -48,8 +48,8 @@ The rough estimate for AO-1 to AO-7 is **10–12 hours of focused work**. That's
 - **Biggest risk:** staging (AO-8). Without a deployed backend and hosted Supabase, the demo can only run on this computer.
 - **If time runs out, keep these first:**
   - AO-2 (login + 2FA) ☑
-  - AO-5 (audit log)
-  - one action that writes to the audit log (role change in AO-4, or a setting in AO-6)
+  - AO-5 (audit log) ☑
+  - one action that writes to the audit log (role change in AO-4 ☑, or a setting in AO-6)
 
   Together these prove the client's check: "admin login requires 2FA; actions appear in the audit log".
 
@@ -92,7 +92,7 @@ Not part of this plan: the Sprint 1 line "Staging site: registration, email veri
 | **AO-2** | Login with mandatory 2FA, page protection, sign out | ADM-11, ADM-12, ADM-13, ADM-14, ADM-15, ADM-16 | Sprint 1 | 3 h | ☑ 3 Nov |
 | **AO-3** | One API helper, paging, error and permission handling | ADM-08, ADM-09, ADM-10, ADM-06, ADM-18 | Sprint 1 | 2 h | ☑ 3 Nov |
 | **AO-4** | Roles matrix and admin users, live | ADM-05, ADM-34 | Sprint 1 | 2 h | ☑ 3 Nov |
-| **AO-5** | Audit log, live | ADM-35 | Sprint 1 | 1 h | ☐ |
+| **AO-5** | Audit log, live | ADM-35 | Sprint 1 | 1 h | ☑ 3 Nov |
 | **AO-6** | Settings, live | ADM-36 | Sprint 1 | 1 h | ☐ |
 | **AO-7** | Fresh 2FA before sensitive actions, bug fixes, Sprint 1 demo check | ADM-19, ADM-03, ADM-69 | Sprint 1 | 1.5 h | ☐ |
 | **AO-8** | Admin app on staging | ADM-68 | Sprint 1 (client acceptance) | 1 h + infra | ⏸ needs staging infra |
@@ -177,6 +177,7 @@ Not part of this plan: the Sprint 1 line "Staging site: registration, email veri
   - "Load more" works
   - the details drawer shows before/after values, IP, browser and request ID
 - **Not in this order:** an IP filter on the server (gap G6). Until then it filters only the loaded rows, and says so.
+- **Done 3 Nov:** all of the above, against the local backend. Found: G14 (IPs behind a proxy) and G15 (request ID).
 
 #### AO-6 · Settings
 - **Steps:** ADM-36.
@@ -269,11 +270,11 @@ A step is ☑ only when all of these are true:
 
 - **Real login (AO-2, 3 Nov):** Supabase password + mandatory 2FA, page protection, sign out and the 12-hour session.
 - **Talking to the backend (AO-3, 3 Nov):** one API helper (`src/lib/api`) with the 2FA token, typed from the contract; cursor paging; error, loading and not-found pages; the admin access check on every page load. Lint blocks direct `fetch` calls in admin code.
-- **Live screens (AO-4, 3 Nov):** Roles (the live matrix) and Admin users (list, search, add, change roles, disable, re-enable). The top bar says "Live data" on these pages and "Sample data" on the others.
+- **Live screens (3 Nov):** Roles (the live matrix) and Admin users (list, search, add, change roles, disable, re-enable) in AO-4; the Audit log in AO-5. The top bar says "Live data" on these pages and "Sample data" on the others.
 - **The other screens are still a preview.**
-  - 20 screens on sample data (`apps/admin/src/mocks`).
+  - 19 screens on sample data (`apps/admin/src/mocks`).
   - Every button only shows a "Sample… previewed" message.
-  - They move to the API helper one by one (AO-5 onwards).
+  - They move to the API helper one by one (AO-6 onwards).
 - **New readable colour palette** (2 Nov), in `packages/ui`, committed 3 Nov (`24661b6`).
 - **The app installs and runs** (workspace fix of 2 Nov) on the frontend `dev` branch.
 
@@ -709,7 +710,7 @@ where p.email = 'admin@example.com';
   - **No answer (lost connection):** the dialog says the change may already be saved, and the list loads again.
   - **Tried for real** against backend `dev` (`1d4c8bf`): API helper 31/31, browser 50/50. Included: the new admin set up 2FA and got in; Finance access applied at once after a role change; a disabled admin's next request was refused (403); every change was in the audit log with qa-admin as the actor; a Support admin gets the permission message.
 
-#### ADM-35 · Audit log ☐
+#### ADM-35 · Audit log ☑ *(3 Nov)*
 - **Build:**
   - real entries from `GET /admin/audit-logs`, newest first, with "Load more"
   - filters: actor, action, entity type, date range (UTC)
@@ -721,6 +722,17 @@ where p.email = 'admin@example.com';
 - **Permission:** `audit.read` · **Backend:** Live · **Order:** AO-5
 - **Done when:** entries from real admin actions (AO-4, AO-6) show, and the filters work.
 - **Ready from AO-4:** admin-user changes are logged as `createAdminMember`, `updateAdminMember` and `disableAdminMember`, with entity type `admin_members` and the member's ID. `actor_id` is the acting admin's **member** ID, not their profile ID, so the admin users list can turn it into a name.
+- **Done 3 Nov:**
+  - **Screen:** `src/components/audit-screen.tsx`; the rules behind it are in `src/lib/audit.ts`. 50 entries per page, newest first, with "Load more".
+  - **Filters:** Who, Action, Record and From/To (UTC days, sent as `00:00:00.000Z` to `23:59:59.999Z`) are applied by the server. IP filters the loaded entries and says so when more pages exist (G6).
+  - **Bad filters are explained, not sent:** a backwards date range, or a partial admin ID typed by someone who can't see names. The API would refuse both (400).
+  - **Words, not codes:** each action is shown in plain words with its code underneath (the 23 write operations; a test keeps the list equal to the contract). An admin change says what it did: re-enabled, disabled or roles changed.
+  - **Records** are named from the entry itself (email, setting key, name), so they read well after the record is gone.
+  - **Names (G6):** admins who can manage admins see names, from the admin list. Others (Risk, Finance) see "Admin 3cddad6e…" with a note.
+  - **IPs:** IPv4 addresses arrive as `::ffff:127.0.0.1` and show as `127.0.0.1`. The IP filter matches either form.
+  - **Details drawer:** who (name and email), actor type and ID, action, record, IP, browser, request ID, entry ID, "Changed: …", and before and after side by side with the changed fields first.
+  - **Read only:** no buttons. The API has no route to change an entry (DELETE, PATCH and PUT → 404, checked).
+  - **Tried for real** against backend `dev` (`1d4c8bf`): API helper 24/24, browser 33/33, including a Finance viewer (IDs, filter by a typed ID) and a Support viewer ("You don't have permission for this page").
 
 #### ADM-36 · Settings ☐
 - **Build:**
@@ -738,6 +750,7 @@ where p.email = 'admin@example.com';
   - every save uses the fresh 2FA check (ADM-19)
 - **Permission:** `settings.manage` · **Backend:** Live · **Order:** AO-6
 - **Done when:** changes save and show in the audit log.
+- **Found in AO-5:** locally only 5 of the 7 settings have a saved value. `platform_name` and `support_email` have no row yet, so `GET /admin/settings/{key}` answers 404 for them and the list leaves them out. The screen must show those two as "not set yet". Saving one creates it, because `PUT` is an upsert.
 
 #### ADM-37 · Settings: KYC gates ⏸
 - **Build:** choose when KYC is required, in any combination: at sign-up, before the funded account, before the first payout. The default is before the first payout. This is a client requirement.
@@ -967,7 +980,7 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | **G3** | Invite or create an admin login by email; today `POST /users` only grants access to an existing account | AD1-03 | "Add admin" picks an account that already signed up |
 | **G4** | Check that a fresh 2FA code was entered before sensitive actions (role changes, disabling admins, settings, payouts, risk actions) | AD1-07 | Asks for a real fresh code in the browser (ADM-19); the API doesn't check it |
 | **G5** | Enforce the 12-hour admin session. Today the backend accepts any valid `aal2` token, however old the sign-in is, and Supabase sessions never end on their own. So a stolen refresh token keeps working past 12 hours outside the admin app. Fix: the backend refuses admin tokens whose `amr` password time is over 12 hours old. Don't set Supabase's **Time-box user sessions** to 12 h: it applies to every account in the project, traders included (corrected 3 Nov; the trader plan, `docs/WEB_BUILD_PLAN.md`, sets it to 7 days). | AD1-07 | The admin app ends the session 12 hours after the password sign-in, in `proxy.ts` and in the browser, and signs it out in Supabase (ADM-15) |
-| **G6** | Audit log: an IP filter, and the actor's name or email in each entry | AD1-05 | Filters IP on loaded rows only; shows the actor ID |
+| **G6** | Audit log: an IP filter, and the actor's name or email in each entry | AD1-05 | Filters IP on loaded rows only, and says so. Names come from the admin list for admins who can manage admins; others see "Admin 3cddad6e…" with a note (AO-5) |
 | **G7** | First admin on staging: there is no script, only manual SQL | Sprint 1 | ADM-67's SQL, run by the backend engineer on staging |
 | **G8** | Staging: deployed backend + hosted Supabase (2FA on) + `ADMIN_URL` set to the staging admin address | Sprint 1 acceptance | Demo only on this computer until it exists (AO-8 ⏸) |
 | **G9** | Admin password strength: local Supabase allows 6 characters with no rules | Security | Nothing in the panel; set a strong policy in hosted Supabase |
@@ -975,6 +988,8 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | **G11** | `GET /admin/users` has no `status` filter, and returns rows in internal ID order, which looks random (found in AO-4). Add `status`, and order by email or name. | AD1-03 | Asks for 100 per page, sorts the loaded rows by name, and filters status on the loaded rows (and says so when there are more pages) |
 | **G12** | Admin last login is never recorded: nothing writes `admin_members.last_login_at` (or `profiles.last_login_at`), so `GET /admin/users` always sends `null` (found in AO-4). Fill it from Supabase's `auth.users.last_sign_in_at`, or record it at sign-in. | AD1-03 | Shows "Not recorded", not "Never" |
 | **G13** | The contract doesn't list all 18 permission codes: `StaffRole.permissions` is plain text, and only the 7 codes the routes use appear (found in AO-4). Publish the `PermissionCode` list in `openapi.json`. | AD1-04 | Keeps a copy of the backend's list (`apps/admin/contract/permissions.json`), checked by a test; copy it again when the backend changes it |
+| **G14** | Audit IPs behind a proxy: the backend saves `request.ip` but never sets Express's `trust proxy`. On staging or production behind a load balancer, every entry would show the proxy's IP (found in AO-5). Set `trust proxy` to the host's proxy hops, and check one staging entry. | AD1-05, AO-8 | Shows the IP the backend saved; correct locally (`127.0.0.1`) |
+| **G15** | The audit "request ID" is a new random ID per entry, written only to the audit table. No request header or server log carries it, so an entry can't be matched to server logs (found in AO-5). Give each request one ID, log it, return it as a header, and save that one. | AD1-05 | Shows it as "Request ID" (it does identify the entry) |
 
 ---
 
@@ -1010,6 +1025,7 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | API types (ADM-08) | `openapi-typescript` 7.13.0 (MIT, openapi-ts project, released 11 Feb 2026, no advisories) |
 | Error, loading and not-found files (ADM-06) | The bundled Next.js 16.3 docs: `error.md` (`retry`), `loading.md`, `not-found.md`; `forbidden.md` is still experimental, so it isn't used |
 | Admin users and roles (ADM-05, ADM-34) | Backend `dev` at `1d4c8bf`: `src/contracts/admin-foundation.ts` (StaffMember, StaffRole, request bodies), `src/contracts/permissions.ts`, `src/api/admin/admin-foundation.service.ts` (the self and last-Admin refusals, the search, the ID order), `src/api/admin/admin.service.ts` (one transaction per change with its audit record; the action is the operation ID), `supabase/seed.sql` (roles, permission descriptions) |
+| Audit log (ADM-35) | Backend `dev` at `1d4c8bf`: `src/contracts/admin-foundation.ts` (AuditRecord, the audit query), `src/api/admin/admin-foundation.service.ts` (`listAdminAuditLogs`: exact action and record type, `created_at` range, newest by ID), `src/api/admin/admin.service.ts` (the only writer: action = operation ID, IP = `request.ip`, request ID = random), `src/contracts/primitives.ts` (Timestamp: ISO 8601 with `Z`; UUID: RFC 9562) |
 
 ---
 
@@ -1027,3 +1043,4 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | 3 Nov 2026 | AO-3 | **Done.** ADM-08: contract copy + generated types (`openapi-typescript` 7.13.0, dev only). ADM-09: one API helper (2FA token, timeouts, safe read retries, session renewal, 2FA prompt, a message per error code, money as text, UTC times); lint blocks direct `fetch`. ADM-10: cursor paging (list state, hook, "Load more"). ADM-06: loading, error (with `retry`) and not-found pages, plus a shared API error panel. ADM-18 fallback: access check on every page load signs non-admins out. Checks: lint ✓, typecheck (both apps) ✓, tests web 15 + admin 109 (60 new) ✓, admin production build ✓, real backend 15/15 ✓, browser 26/26 ✓, AO-2 login test again 39/39 ✓. Local QA accounts made for testing (qa-admin, qa-support, qa-newadmin, qa-trader 1–3). Found: G10 (settings field name), the shared `Modal`'s dev double-run close (ADM-03), the traders list leaves out admin members (ADM-34). |
 | 3 Nov 2026 | G5 | **Corrected.** Supabase's "Time-box user sessions" applies to every account in the project, so it must not be set to 12 h (traders get 7 days, see `docs/WEB_BUILD_PLAN.md`). The admin 12 h stays in the backend and the admin app. |
 | 3 Nov 2026 | AO-4 | **Done.** ADM-05: live roles matrix (4 roles × 18 permissions), one permission list for the app (`src/lib/auth/permissions.ts`) kept equal to the backend's by a test; the 16 old sample permissions removed. ADM-34: live admin users (list and search, add an existing account, change roles, disable, re-enable, details drawer), the backend's refusals shown as it words them; "Reset 2FA" says "Not available yet". Also: the top bar says "Live data" or "Sample data" for each page, and hides the sample clock on live pages; `DataTable` got optional row names, row test IDs, a drawer title and an empty message; the list hook can swap in one edited row; tables keep their screen-reader text inside their scroll box (a phone overflow found by the browser test). Checks: lint ✓, typecheck (both apps) ✓, tests web 29 + admin 129 (20 new) ✓, admin production build ✓, real backend 31/31 ✓, browser 50/50 ✓, AO-3 browser test again 26/26 ✓, AO-2 login test again 39/39 ✓. Contract unchanged at backend `1d4c8bf`. Found: G11, G12, G13. |
+| 3 Nov 2026 | AO-5 | **Done.** ADM-35: live audit log. Newest first, 50 per page with "Load more". The server filters by who, action, record type and UTC days; the screen filters IP on the loaded entries (G6). Actions and records are shown in words; the details drawer shows before and after with the changed fields first. Names come from the admin list when allowed, otherwise short IDs. Read only. The sample audit events were removed, and the top bar marks `/audit-log` and `/audit` as live. Checks: lint ✓, typecheck (both apps) ✓, tests web 29 + admin 140 (11 new) ✓, admin production build ✓, real backend 24/24 ✓, browser 33/33 ✓, again AO-4 50/50, AO-3 26/26, AO-2 39/39 ✓. Found: G14 (audit IPs behind a proxy), G15 (request ID not tied to logs), and that `platform_name` and `support_email` have no saved value yet (noted in ADM-36). |

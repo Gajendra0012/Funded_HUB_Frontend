@@ -114,8 +114,8 @@ describe("admin users: refusals and failures (ADM-34)", () => {
 });
 
 describe("live pages", () => {
-  it("labels the pages AO-4 connected as live, the rest stay sample", () => {
-    for (const path of ["/roles", "/admin-users", "/users"]) expect(isLivePath(path), path).toBe(true);
-    for (const path of ["/", "/traders", "/audit-log", "/settings", "/roles/extra"]) expect(isLivePath(path), path).toBe(false);
+  it("labels the connected pages as live (AO-4 roles and admin users, AO-5 audit log); the rest stay sample", () => {
+    for (const path of ["/roles", "/admin-users", "/users", "/audit-log", "/audit"]) expect(isLivePath(path), path).toBe(true);
+    for (const path of ["/", "/traders", "/settings", "/roles/extra"]) expect(isLivePath(path), path).toBe(false);
   });
 });

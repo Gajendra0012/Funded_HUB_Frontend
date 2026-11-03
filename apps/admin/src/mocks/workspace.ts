@@ -24,12 +24,6 @@ export const workspace:WorkspaceMocks={
  riskLimits:{daily:5,maximum:10,profit:8},discountCap:500,liabilityAllocation:"$24,650",
  now:SAMPLE_NOW,
  countries:[...countryOptions,{code:"AU",name:"Australia"},{code:"DE",name:"Germany"},{code:"FR",name:"France"},{code:"JP",name:"Japan"}],restrictedCountries:["US","CA"],updatedBy:"Alex Morgan",updatedAt:sampleAt(3600),
- audit:[
- {id:"EVT-1048",at:sampleAt(90),actor:"Alex Morgan",action:"admin.login",entity:"staff-001",ip:"192.0.2.10",before:{outcome:"Not signed in"},after:{outcome:"Sample sign-in"}},
- {id:"EVT-1047",at:sampleAt(300),actor:"Jordan Lee",action:"admin.role_changed",entity:"staff-003",ip:"192.0.2.11",before:{role:"Support",status:"Active"},after:{role:"Risk",status:"Active"}},
- {id:"EVT-1046",at:sampleAt(650),actor:"Alex Morgan",action:"admin.2fa_reset",entity:"staff-004",ip:"192.0.2.10",before:{twoFactor:"Enrolled"},after:{twoFactor:"Setup required"}},
- {id:"EVT-1045",at:sampleAt(3600),actor:"Alex Morgan",action:"settings.changed",entity:"restricted-countries",ip:"192.0.2.10",before:{countries:["US"]},after:{countries:["US","CA"]}}
- ],
  screens:{
  "risk-monitor":screen("Risk monitor","Trading","Account limits and stream activity at the shared UTC snapshot.",risk,[{label:"Monitored",value:"1,284"},{label:"Near limit",value:"18"},{label:"Breached",value:"4"},{label:"Delayed streams",value:"3"}],[{key:"id",label:"Account",mono:true},{key:"name",label:"Trader"},{key:"status",label:"Risk state"},{key:"detail",label:"Daily usage"},{key:"at",label:"Last event · UTC",mono:true}]),
  violations:screen("Violations","Trading","Investigate rule events before taking an account action.",[record("VIO-1048","Jamie Chen","Breached","loss","Daily loss · hard rule"),record("VIO-1047","Taylor Brooks","Warning","caution","Consistency · soft rule"),record("VIO-1046","Riley Singh","Resolved","neutral","Daily loss · reviewed")],[{label:"Open events",value:"24"},{label:"Hard breaches",value:"4"},{label:"Soft warnings",value:"20"}], [{key:"id",label:"Event ID",mono:true},{key:"name",label:"Trader"},{key:"detail",label:"Rule"},{key:"status",label:"State"},{key:"at",label:"Event time · UTC",mono:true}]),

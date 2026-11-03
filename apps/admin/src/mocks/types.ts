@@ -42,7 +42,7 @@ export type WorkspaceMocks = {
  paymentFacts:{expected:string;network:string;confirmations:string};payoutBreakdown:Record<string,{label:string;value:string}[]>;
  riskLimits:{daily:number;maximum:number;profit:number};discountCap:number;liabilityAllocation:string;
  countries:{code:string;name:string}[];restrictedCountries:string[];updatedBy:string;updatedAt:string;
- audit:AuditEvent[];screens:Record<string,ScreenData>;risk:OpsRecord[];
+ screens:Record<string,ScreenData>;risk:OpsRecord[];
  checks:{label:string;passed:boolean;detail:string}[];payoutChecks:{label:string;passed:boolean;detail:string}[];
  timeline:{id:string;title:string;at:string;description:string}[];
  evidence:{label:string;value:string}[];documents:{id:string;title:string;description:string}[];

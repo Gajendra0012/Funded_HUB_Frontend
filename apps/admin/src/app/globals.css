@@ -285,3 +285,12 @@ html {background:var(--admin-canvas);}
 .ops-form .account-option>input[type=radio] {flex:none;width:16px;height:16px;min-height:0;padding:0;margin:3px 0 0;accent-color:var(--admin-blue);}
 .account-option>span {display:grid;gap:2px;min-width:0;overflow-wrap:anywhere;}
 .filter-note {margin:0;padding:0 16px 12px;}
+/* AO-5 · audit log (live) */
+.audit-filter-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;padding:12px 16px;border-top:var(--admin-border);}
+.audit-filter-grid .ops-field {font-size:12px;color:var(--admin-muted);}
+.audit-filter-grid .ops-field>:is(input,select) {color:var(--admin-text);font-size:14px;}
+.audit-filter-footer {display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 16px 12px;border-bottom:var(--admin-border);}
+.audit-cell {display:grid;gap:2px;}
+.audit-cell code {font-size:12px;color:var(--admin-muted);overflow-wrap:anywhere;}
+.audit-filter-error {margin:16px;}
+.audit-change {margin:16px 0 8px;font-size:14px;}
