@@ -1,6 +1,15 @@
-import { LoginPreview } from "@/components/login-preview";
-import { Brand } from "@/components/brand";
-import { PageStateView } from "@/components/ops-common";
-import { workspace } from "@/mocks/workspace";
-import { pagePreview, type PreviewSearch } from "@/lib/page-preview";
-export default async function Page({searchParams}:{searchParams:PreviewSearch}) {const state=await pagePreview(searchParams);return state==="default" ? <LoginPreview data={workspace}/> : <section className="login-card"><Brand/><h1>Admin sign-in</h1><PageStateView state={state} title="Sign-in">{null}</PageStateView></section>;}
+import type { Metadata } from "next";
+import { LoginFlow } from "@/components/login-flow";
+import { safeNextPath } from "@/lib/auth/access";
+
+export const metadata: Metadata = { title: "Sign in" };
+
+type LoginSearch = Promise<{ next?: string | string[]; reason?: string | string[] }>;
+
+const first = (value?: string | string[]) => (Array.isArray(value) ? value[0] : value);
+
+/** /login?next=/traders&reason=expired: `next` is where to go after signing in (only pages on this site). */
+export default async function LoginPage({ searchParams }: { searchParams: LoginSearch }) {
+  const params = await searchParams;
+  return <LoginFlow next={safeNextPath(first(params.next))} reason={first(params.reason) ?? null} />;
+}

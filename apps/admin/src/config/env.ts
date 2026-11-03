@@ -81,6 +81,14 @@ export function checkAdminEnv(raw: RawAdminEnv): { env?: AdminEnv; problems: str
   return { env: { supabaseUrl, supabasePublishableKey: keyRaw, adminApiUrl }, problems };
 }
 
+/**
+ * The environment tag in the top bar: "Local" when the backend runs on this computer.
+ * Every hosted backend is "Staging" for now; a production label comes with the first production setup.
+ */
+export function environmentLabel(adminApiUrl: string): "Local" | "Staging" {
+  return LOCAL_HOSTS.has(new URL(adminApiUrl).hostname) ? "Local" : "Staging";
+}
+
 /** Returns the checked settings, or throws one clear error that lists every problem. */
 export function assertAdminEnv(raw: RawAdminEnv = readAdminEnv()): AdminEnv {
   const { env, problems } = checkAdminEnv(raw);

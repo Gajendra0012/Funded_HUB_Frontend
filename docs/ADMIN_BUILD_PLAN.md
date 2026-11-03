@@ -3,8 +3,8 @@
 **Goal:** build the Funded HUB admin app (`apps/admin`) completely and correctly. We work **one build order at a time**, starting with what Sprint 1 needs.
 
 - Created: 2 Nov 2026
-- Last updated: 3 Nov 2026 (rebuilt around the backend's new admin API and the Sprint 1 deadline)
-- Progress: **3 of 69 steps done** (AO-1 ☑) · next order: **AO-2**
+- Last updated: 3 Nov 2026 (AO-2 done: real login with mandatory 2FA; ADM-70 added for a Next.js security fix)
+- Progress: **9 of 70 steps done** (AO-1 ☑, AO-2 ☑) · next: **ADM-70** (Next.js security fix, recommended first), then **AO-3**
 
 ---
 
@@ -23,20 +23,19 @@ The client checks it like this before paying, on **staging**:
 | Task | What the sprint asks | Admin app today | Backend `dev` today | Left to do | Order |
 |---|---|---|---|---|---|
 | AD1-01 | Admin app shell | ☑ Done (visual) | n/a | Nothing for Sprint 1 | — |
-| AD1-02 | Admin login with **mandatory 2FA** | Preview only: no real login | ✅ Every admin call requires a 2FA session (`aal2`); local 2FA switched on | Real Supabase login, 2FA setup on first login, 2FA code on every login | AO-2 |
+| AD1-02 | Admin login with **mandatory 2FA** | ☑ Real Supabase login, 2FA setup on first login, 2FA code on every login (AO-2, 3 Nov) | ✅ Every admin call requires a 2FA session (`aal2`); local 2FA switched on | Nothing locally; staging (AO-8) | AO-2 ☑ |
 | AD1-03 | Admin users: list, add, disable, reset 2FA, roles | Preview with sample data | ✅ List, add (existing account), change roles, disable/enable · ❌ reset 2FA · ❌ email invites | Connect the screen to the API | AO-4 |
 | AD1-04 | Roles and permissions view | Preview with the old 16 permissions | ✅ `GET /admin/roles` (4 roles, 18 permissions) | Show the live matrix | AO-4 |
 | AD1-05 | Audit log viewer | Preview with sample data | ✅ `GET /admin/audit-logs` with filters · ❌ IP filter · ❌ actor names | Connect the screen to the API | AO-5 |
 | AD1-06 | System settings | Preview (restricted countries only) | ✅ 7 settings, each saved with an audit record | Connect the screen to the API | AO-6 |
-| AD1-07 | Page protection, permission checks, 12-hour session, 2FA again for sensitive actions | Not built | ✅ Permission check on every call · ❌ "who am I" · ❌ re-auth check · ❌ 12-hour limit | Page protection, permission handling, step-up 2FA, session limit | AO-2, AO-3, AO-7 |
+| AD1-07 | Page protection, permission checks, 12-hour session, 2FA again for sensitive actions | ◐ Page protection and the 12-hour session done (AO-2, 3 Nov) | ✅ Permission check on every call · ❌ "who am I" · ❌ re-auth check · ❌ 12-hour limit | Permission handling, step-up 2FA | AO-3, AO-7 |
 | — | Live on **staging** | Not deployed | Not deployed | Deploy admin app and backend, create the first admin there | AO-8 |
 
 ✅ = built and tested on backend `dev` · ❌ = missing on the backend (see section 6, "Backend gaps")
 
 **Short answer: what's left for Sprint 1.**
-- **Frontend work (AO-1 to AO-7):**
-  - real login with mandatory 2FA
-  - page protection
+- **Done (AO-1, AO-2):** local stack, real login with mandatory 2FA, page protection, 12-hour session.
+- **Frontend work left (AO-3 to AO-7):**
   - one API helper
   - live roles, admin users, audit log and settings
   - a fresh 2FA check before sensitive actions
@@ -49,7 +48,7 @@ The rough estimate for AO-1 to AO-7 is **10–12 hours of focused work**. That's
 
 - **Biggest risk:** staging (AO-8). Without a deployed backend and hosted Supabase, the demo can only run on this computer.
 - **If time runs out, keep these first:**
-  - AO-2 (login + 2FA)
+  - AO-2 (login + 2FA) ☑
   - AO-5 (audit log)
   - one action that writes to the audit log (role change in AO-4, or a setting in AO-6)
 
@@ -91,7 +90,7 @@ Not part of this plan: the Sprint 1 line "Staging site: registration, email veri
 | Order | Goal | Steps | Needed for | Rough time | Status |
 |---|---|---|---|---|---|
 | **AO-1** | Run the real backend locally and create the first admin | ADM-67, ADM-07, ADM-01 | Sprint 1 | 1 h | ☑ 3 Nov |
-| **AO-2** | Login with mandatory 2FA, page protection, sign out | ADM-11, ADM-12, ADM-13, ADM-14, ADM-15, ADM-16 | Sprint 1 | 3 h | ☐ |
+| **AO-2** | Login with mandatory 2FA, page protection, sign out | ADM-11, ADM-12, ADM-13, ADM-14, ADM-15, ADM-16 | Sprint 1 | 3 h | ☑ 3 Nov |
 | **AO-3** | One API helper, paging, error and permission handling | ADM-08, ADM-09, ADM-10, ADM-06, ADM-18 | Sprint 1 | 2 h | ☐ |
 | **AO-4** | Roles matrix and admin users, live | ADM-05, ADM-34 | Sprint 1 | 2 h | ☐ |
 | **AO-5** | Audit log, live | ADM-35 | Sprint 1 | 1 h | ☐ |
@@ -156,6 +155,7 @@ Not part of this plan: the Sprint 1 line "Staging site: registration, email veri
   - lists load more with the cursor
   - a refused page (403) shows "You don't have permission for this page"
   - a crash shows the error page with Retry
+  - an account without admin access is signed out right after login with "This account has no admin access" (ADM-18; found in AO-2)
 - **Tests:** unit tests for every error code, paging, and a missing or expired token.
 
 #### AO-4 · Roles and admin users
@@ -201,6 +201,7 @@ Not part of this plan: the Sprint 1 line "Staging site: registration, email veri
 
 #### AO-8 · Staging
 - **Steps:** ADM-68.
+- **Before you start:** ADM-70 (patched Next.js). Never deploy Next.js 16.3.8.
 - **Blocked by:** a staging backend, hosted Supabase (2FA on) and a host for the admin app. Owner: the manager and backend engineer.
 - **Done when:** the Sprint 1 demo script passes on the staging address.
 
@@ -266,11 +267,12 @@ A step is ☑ only when all of these are true:
 
 ### Admin app
 
-- **A visual preview only.**
+- **Real login (AO-2, 3 Nov):** Supabase password + mandatory 2FA, page protection, sign out and the 12-hour session.
+- **The screens are still a preview.**
   - 22 screens on sample data (`apps/admin/src/mocks`).
   - Every button only shows a "Sample… previewed" message.
-  - No login, 2FA, session, page protection, permission check or paging.
-- **New readable colour palette** (2 Nov). It's in `packages/ui`, not committed yet.
+  - No permission check or paging yet.
+- **New readable colour palette** (2 Nov), in `packages/ui`, committed 3 Nov (`24661b6`).
 - **The app installs and runs** (workspace fix of 2 Nov) on the frontend `dev` branch.
 
 ### Backend (`dev` at `4b81f8d`, 3 Nov)
@@ -328,6 +330,7 @@ Programs and rule sets: 22 routes, all `programs.manage` except publishing (`rul
   - The dashboard KYC card links to `/kyc`.
   - Toasts close by themselves after a few seconds.
   - The admin-users screen's ignored date filter and "Disable" for disabled admins: fixed in ADM-34 when the screen goes live.
+  - The admin app has no icon, so browsers ask for `/favicon.ico` and get a 404 on every page (found 3 Nov by AO-2's browser test). Add `src/app/icon.svg`.
 - **Backend:** Frontend only · **Order:** AO-7
 - **Done when:** each bug is fixed and covered by a test where possible.
 
@@ -451,6 +454,20 @@ where p.email = 'admin@example.com';
 - **Backend:** Frontend only · **Order:** AO-1
 - **Done when:** the app starts with the settings and stops with a clear message without them.
 
+#### ADM-70 · Upgrade Next.js to the patched version ☐ *(added 3 Nov)*
+- **Why:** `bun audit` (3 Nov) found three Next.js advisories, published 22 Oct 2026, for every version from 16.0.0 to 16.4.0. Both apps use **16.3.8**.
+  - critical: remote code execution in the image optimizer when SVG files are used ([GHSA-2464-fhr4-w9xw](https://github.com/advisories/GHSA-2464-fhr4-w9xw))
+  - critical: remote code execution in `use cache` functions that return typed arrays ([GHSA-673q-mjm6-r5xr](https://github.com/advisories/GHSA-673q-mjm6-r5xr))
+  - high: denial of service in the App Router with Server Actions ([GHSA-p3m5-59mp-jv5r](https://github.com/advisories/GHSA-p3m5-59mp-jv5r))
+  - All three are fixed in 16.4.1. The latest on 3 Nov is 16.4.4.
+  - Also found, moderate and only in the development tools: `minimatch` below 11.0.1, through ESLint ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)).
+- **Build:**
+  - First read the Next.js 16.4 release notes and the bundled docs for changes.
+  - Raise `next` in both apps (and `eslint-config-next` to the same version) to the latest 16.4 patch, pinned exactly.
+  - Run every check for both apps, then click through both apps.
+- **Backend:** Frontend only · **Order:** its own commit, recommended before AO-3; required before AO-8.
+- **Done when:** `bun audit` shows no Next.js advisories, and all checks and both production builds pass.
+
 ### Talking to the backend
 
 #### ADM-08 · API types from the backend contract ☐
@@ -487,14 +504,27 @@ where p.email = 'admin@example.com';
 
 ### Login and security
 
-#### ADM-11 · Supabase connection ☐
+#### ADM-11 · Supabase connection ☑ *(3 Nov)*
+
+**Done on 3 Nov:**
+- **Packages:** `@supabase/ssr` 0.12.7 and `@supabase/supabase-js` 2.118.0, the latest on 3 Nov, with no advisories.
+- **Clients:** `src/lib/supabase/browser.ts` (browser) and `src/lib/supabase/server.ts` (server only). Both use the publishable key only, and the session lives in cookies.
+- **Token check:** the server and `proxy.ts` read the session with `getClaims()`, which verifies the token's signature (ES256) instead of trusting the cookie.
 - **Build:**
   - Supabase clients for the browser and the server (`@supabase/ssr`), using only the publishable key
   - the session is kept in cookies, so the server and `proxy.ts` can check it
 - **Backend:** Supabase · **Order:** AO-2
 - **Done when:** the app connects to local Supabase.
 
-#### ADM-12 · Real login (email + password) ☐
+#### ADM-12 · Real login (email + password) ☑ *(3 Nov)*
+
+**Done on 3 Nov:**
+- `src/components/login-flow.tsx` replaces the preview and signs in with Supabase.
+- **Messages:**
+  - one generic message for every sign-in failure
+  - "too many attempts" for 429
+  - "unavailable" when there's no connection or the server fails, so the password isn't blamed
+- **After login:** the admin goes back to the page they asked for (`?next=`). Only paths on this site are accepted; anything else goes to the dashboard.
 - **Build:**
   - Replace the login preview with a real Supabase sign-in.
   - One generic error message for every failure.
@@ -502,7 +532,14 @@ where p.email = 'admin@example.com';
 - **Backend:** Supabase · **Order:** AO-2
 - **Done when:** the first admin can sign in, and a wrong password shows the generic error.
 
-#### ADM-13 · 2FA setup on first login ☐
+#### ADM-13 · 2FA setup on first login ☑ *(3 Nov)*
+
+**Done on 3 Nov:**
+- **No verified authenticator yet:** the admin sees the real QR code and key from `mfa.enroll`, labelled "Funded HUB Admin", and confirms with a 6-digit code.
+- **No way to skip it:** every other page sends the admin back to this step.
+- **Unfinished setups** from earlier attempts are removed first, so a reload starts a fresh setup.
+- **If the 2FA status can't be read** (no connection), the page says so. It never starts a new setup by guessing.
+- **QR code check:** decoded in the test, it's a standard `otpauth://totp` link (SHA1, 6 digits, 30 s) whose key matches the key shown.
 - **Build:**
   - If the admin has no verified authenticator yet, show the real QR code and manual key from Supabase (`mfa.enroll`).
   - Ask for a 6-digit code (`mfa.challenge` + `mfa.verify`).
@@ -510,14 +547,28 @@ where p.email = 'admin@example.com';
 - **Backend:** Supabase · **Order:** AO-2
 - **Done when:** a new admin sets up 2FA with an authenticator app and lands in the panel at `aal2`.
 
-#### ADM-14 · 2FA code on every login ☐
+#### ADM-14 · 2FA code on every login ☑ *(3 Nov)*
+
+**Done on 3 Nov:**
+- **With a verified authenticator,** the code step follows the password. Wrong and old codes are refused.
+- **Backend check:** the backend accepts the browser's `aal2` token (`GET /api/v1/admin/traders` → 200) and refuses a password-only token (`403 MFA_REQUIRED`).
+- **Moved to ADM-09 (AO-3):** "the API answers `MFA_REQUIRED` → ask for the code and retry". AO-2 makes no API calls yet.
 - **Build:**
   - After the password, ask for the 6-digit code until the session reaches `aal2`.
   - When the API answers `MFA_REQUIRED`, ask for the code and retry the call.
 - **Backend:** Supabase · **Order:** AO-2
 - **Done when:** sign-in without the code is impossible, and the API accepts the token.
 
-#### ADM-15 · Sign out and session ☐
+#### ADM-15 · Sign out and session ☑ *(3 Nov)*
+
+**Done on 3 Nov:**
+- **User menu** shows the signed-in name and email. **Sign out** also ends the session in Supabase: its refresh token stops working.
+- **12-hour limit,** counted from the password sign-in (the token's `amr` time):
+  - `proxy.ts` ends an older session and shows `/login?reason=expired` ("Your admin session ended after 12 hours").
+  - The top-bar timer ("Session expires in 11:42") signs out when it reaches zero.
+  - Signing out in another tab signs this tab out too.
+- **Tokens refresh by themselves,** in the browser and in `proxy.ts`.
+- **Still open on the backend:** gap G5.
 - **Build:**
   - real user menu with the signed-in email, and a working sign out
   - the token refreshes automatically
@@ -526,7 +577,18 @@ where p.email = 'admin@example.com';
 - **Backend:** Supabase · **Order:** AO-2
 - **Done when:** sign out works, and the session ends 12 hours after sign-in.
 
-#### ADM-16 · Page protection ☐
+#### ADM-16 · Page protection ☑ *(3 Nov)*
+
+**Done on 3 Nov:**
+- **`src/proxy.ts`** sends every page without an active session (password + 2FA, under 12 hours) to `/login?next=…`. If you're already signed in, `/login` goes straight on to the page.
+- **`app/(app)/layout.tsx`** checks again on the server (`verifyAdminSession` in `src/lib/auth/session.ts`).
+- **Removed:**
+  - the sample login preview, with its "Explore the sample workspace" link and its styles
+  - from the top bar: the sample role badge, "View profile" and the sample toast
+- **Tests:**
+  - 23 new unit tests in `tests/auth.test.ts` (49 admin tests in total)
+  - a real run in Edge against local Supabase and the backend: 38/38 checks
+  - a no-connection run: 4/4
 - **Build:**
   - `proxy.ts` sends anyone without an `aal2` session to `/login`
   - the admin layout checks the session again on the server
@@ -541,7 +603,9 @@ where p.email = 'admin@example.com';
 
 #### ADM-18 · Permissions in the UI ◐ fallback in AO-3, full version after gap G1
 - **Fallback now (AO-3):**
-  - show the signed-in email in the top bar
+  - show the signed-in email in the top bar (done in AO-2: the user menu shows the name and email)
+  - **check admin access right after login** with one call every role may make: `GET /api/v1/admin/traders` (all 4 roles have `traders.read`). On `403 FORBIDDEN`, sign out with "This account has no admin access".
+    - Why (found in AO-2): until then, any Supabase account that knows its own password can set up 2FA and open the admin shell. It sees only sample data, and the backend refuses all of its API calls.
   - when the API refuses (403), show "You don't have permission for this page" instead of an error
   - admins with `admins.manage` can see their own roles (they're in the admin users list)
 - **Full version (after G1, a "who am I" endpoint):**
@@ -826,11 +890,11 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 
 | ID | Missing on the backend | Sprint task | What the panel does until then |
 |---|---|---|---|
-| **G1** | A "who am I" endpoint for admins (e.g. `GET /admin/me`: my member record, roles, permissions) | AD1-07 | Shows the email; explains 403s; can't hide what you can't use (ADM-18) |
+| **G1** | A "who am I" endpoint for admins (e.g. `GET /admin/me`: my member record, roles, permissions). Ideally it also answers before the 2FA step (`aal1`), so the login can turn away non-admin accounts before they set up 2FA. | AD1-07 | Shows the name and email (AO-2); after login, one call every role may make tells admins from other accounts (AO-3); explains 403s; can't hide what you can't use (ADM-18) |
 | **G2** | Reset another admin's 2FA (needs the Supabase admin API on the server) | AD1-03 | "Reset 2FA" shows "Not available yet" |
 | **G3** | Invite or create an admin login by email; today `POST /users` only grants access to an existing account | AD1-03 | "Add admin" picks an account that already signed up |
 | **G4** | Check that a fresh 2FA code was entered before sensitive actions (role changes, disabling admins, settings, payouts, risk actions) | AD1-07 | Asks for a real fresh code in the browser (ADM-19); the API doesn't check it |
-| **G5** | Enforce the 12-hour admin session | AD1-07 | The browser signs the admin out after 12 hours (ADM-15) |
+| **G5** | Enforce the 12-hour admin session. Today the backend accepts any valid `aal2` token, however old the sign-in is, and Supabase sessions never end on their own. So a stolen refresh token keeps working past 12 hours outside the admin app. Fix: the backend refuses tokens whose `amr` password time is over 12 hours old; on hosted Supabase also set **Time-box user sessions** to 12 h (Pro plan; CLI `auth.sessions.timebox`). | AD1-07 | The admin app ends the session 12 hours after the password sign-in, in `proxy.ts` and in the browser, and signs it out in Supabase (ADM-15) |
 | **G6** | Audit log: an IP filter, and the actor's name or email in each entry | AD1-05 | Filters IP on loaded rows only; shows the actor ID |
 | **G7** | First admin on staging: there is no script, only manual SQL | Sprint 1 | ADM-67's SQL, run by the backend engineer on staging |
 | **G8** | Staging: deployed backend + hosted Supabase (2FA on) + `ADMIN_URL` set to the staging admin address | Sprint 1 acceptance | Demo only on this computer until it exists (AO-8 ⏸) |
@@ -865,6 +929,8 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | UI rules and palette | `docs/ADMIN_UI_RULES.md`, `DESIGN.md` |
 | Scope and schedule | The manager's v2 backend guide and decisions (31 Oct 2026) and the week 1 plan |
 | Client decisions | The project's client answers log |
+| Supabase session limits (G5) | [Supabase: User sessions](https://supabase.com/docs/guides/auth/sessions) (time-box, Pro plan) |
+| Next.js advisories (ADM-70) | GitHub Advisory Database: GHSA-2464-fhr4-w9xw, GHSA-673q-mjm6-r5xr, GHSA-p3m5-59mp-jv5r |
 
 ---
 
@@ -877,3 +943,5 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | 2 Nov 2026 | – | Colours only (not a numbered step): new readable admin palette in packages/ui (dark neutral layers, web-theme accents), at the user's request. See DESIGN.md › Admin palette. |
 | 3 Nov 2026 | AO-1 | **Done.** ADM-67: backend `dev` running locally in a separate worktree, first admin created, 2FA chain tested end to end (9/9). ADM-07: settings file plus a startup check, with 10 tests. ADM-01: root checks cover both apps. Checks: lint ✓, typecheck (web and admin) ✓, tests 15 + 26 ✓, both production builds ✓. README updated. |
 | 3 Nov 2026 | – | **Rebuilt as build orders (AO-1 …).** Reasons: the backend's `dev` branch now has a live admin API (35 routes, contract v1.1.0, `4b81f8d`), and Sprint 1 promises "admin panel with mandatory 2FA, roles and audit log" for the Wed 4 Nov demo. Changes: Sprint 1 orders come first; programs, rule sets and trader basics moved from "API defined" to "Live"; the sample mode in ADM-09 was dropped (the screens it served now have a live API); ADM-34 – ADM-36 rewritten to the real API; added ADM-67 (local backend + first admin), ADM-68 (staging) and ADM-69 (Sprint 1 demo check); added backend gaps G1–G9 and question D7. |
+| 3 Nov 2026 | AO-2 | **Done.** ADM-11 – ADM-16: real Supabase login with mandatory 2FA (setup on first login, code on every login), page protection in `proxy.ts` plus a server check, sign out, and the 12-hour session with a top-bar timer. Sample login preview removed. Checks: lint ✓, admin typecheck ✓, admin tests 49 ✓ (23 new), admin production build ✓, real run in Edge 38/38 ✓ (phone width and both 12-hour paths included), no-connection run 4/4 ✓, QR code decoded ✓. Still to do: the first scan with a phone authenticator app, by the user. |
+| 3 Nov 2026 | ADM-70 | **Added.** `bun audit` found 2 critical and 1 high Next.js advisories for 16.0.0 – 16.4.0; both apps use 16.3.8; fixed in 16.4.1. Also from AO-2's tests: the admin favicon 404 (added to ADM-03), non-admin accounts can sign in until AO-3's access check (ADM-18, G1 updated), and the 12-hour limit isn't enforced for direct API calls (G5 updated). |

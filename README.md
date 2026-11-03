@@ -27,6 +27,8 @@ For the full local stack, see `docs/ADMIN_BUILD_PLAN.md`, step ADM-67. It covers
 - local Supabase with 2FA on
 - the first admin
 
+**Signing in:** open http://127.0.0.1:3101 and sign in with an admin account (ADM-67 creates the first one). The first sign-in sets up 2FA with an authenticator app (scan the QR code); every later sign-in asks for the 6-digit code. Admin sessions end 12 hours after sign-in.
+
 ### Checks
 
 These cover both apps. `bun run build` needs the admin settings above.
