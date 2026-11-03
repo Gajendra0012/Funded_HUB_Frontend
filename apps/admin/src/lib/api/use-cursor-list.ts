@@ -65,6 +65,8 @@ export function useCursorList<T extends { id: string }>(key: string, fetchPage: 
     retry: () => (status === "error-more" ? loadMore() : setAttempt((n) => n + 1)),
     /** Starts again from the first page (for example after a change). */
     reload: () => setAttempt((n) => n + 1),
+    /** Puts the server's new copy of one loaded record in place (after an edit), keeping the loaded pages. */
+    replaceItem: (item: T) => dispatch({ type: "replace", item }),
   };
 }
 

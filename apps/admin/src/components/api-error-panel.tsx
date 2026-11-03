@@ -6,11 +6,12 @@ import { describeApiError } from "@/lib/api/error-view";
 /**
  * The shared "what went wrong" panel for API errors (ADM-06), with "Try again" when it can help.
  * A 403 shows "You don't have permission for this page" (ADM-18).
+ * `inline` drops the panel frame, for an error inside a panel that's already on screen.
  */
-export function ApiErrorPanel({ error, onRetry }: { error: ApiError; onRetry?: () => void }) {
+export function ApiErrorPanel({ error, onRetry, inline = false }: { error: ApiError; onRetry?: () => void; inline?: boolean }) {
   const view = describeApiError(error);
   return (
-    <section className="panel state-panel" data-testid="api-error" data-code={error.code}>
+    <section className={inline ? "state-panel" : "panel state-panel"} data-testid="api-error" data-code={error.code}>
       <div className="inline-alert" role="alert">
         <StatusChip state={view.tone}>{view.chip}</StatusChip>
         <h2>{view.title}</h2>

@@ -7,6 +7,7 @@ import { Drawer } from "@funded-hub/ui";
 import type { NavGroup } from "@/mocks/types";
 import type { ApiError } from "@/lib/api/errors";
 import { signOutToLogin, type LoginReason } from "@/lib/auth/sign-out";
+import { isLivePath } from "@/lib/live-pages";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 import { useAdminApi } from "./admin-api-provider";
 import { Brand } from "./brand";
@@ -63,6 +64,7 @@ export function AdminShell({
   identity: ShellIdentity;
 }) {
   const pathname = usePathname();
+  const live = isLivePath(pathname);
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobile, setMobile] = useState(false);
@@ -234,10 +236,15 @@ export function AdminShell({
           </div>
           <div className="topbar-right">
             <span className="environment-tag">{identity.environment}</span>
-            <span className="sample-tag">Sample data</span>
-            <time className="utc-clock" dateTime={identity.now} aria-label="Sample UTC time">
-              {identity.now.slice(11, 19)} UTC
-            </time>
+            <span className="sample-tag" data-testid="data-tag" data-live={live}>
+              {live ? "Live data" : "Sample data"}
+            </span>
+            {/* The sample clock belongs to the sample pages; live pages show real UTC times in their rows. */}
+            {!live && (
+              <time className="utc-clock" dateTime={identity.now} aria-label="Sample UTC time">
+                {identity.now.slice(11, 19)} UTC
+              </time>
+            )}
             <SessionCountdown expiresAt={identity.sessionExpiresAt} onExpired={onSessionExpired} />
             <details className="user-menu" data-testid="user-menu">
               <summary aria-label="Open user menu">{identity.initials}</summary>
@@ -273,7 +280,7 @@ export function AdminShell({
         </main>
         <footer className="admin-footer">
           <span>Funded HUB · Operations</span>
-          <span>Sample workspace · All times UTC</span>
+          <span>{live ? "Live workspace" : "Sample workspace"} · All times UTC</span>
         </footer>
       </div>
     </div>

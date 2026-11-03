@@ -3,7 +3,7 @@ import { AdminShell } from "@/components/admin-shell";
 import { PreviewProvider } from "@/components/preview-provider";
 import { assertAdminEnv, environmentLabel } from "@/config/env";
 import { verifyAdminSession } from "@/lib/auth/session";
-import { initialState, roles, countryOptions, currentPreviewUser, permissionMatrix, descriptions } from "@/mocks/legacy";
+import { initialState, roles, countryOptions, currentPreviewUser, descriptions } from "@/mocks/legacy";
 import { navigation } from "@/mocks/admin";
 import { SAMPLE_NOW } from "@/mocks/now";
 
@@ -23,7 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <PreviewProvider data={initialState} config={{ roles, countryOptions, currentPreviewUser, permissionMatrix, descriptions }}>
+    <PreviewProvider data={initialState} config={{ roles, countryOptions, currentPreviewUser, descriptions }}>
       <AdminApiProvider>
         <AdminShell navigation={navigation} identity={identity} showDev={process.env.NODE_ENV === "development"}>
           {children}

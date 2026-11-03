@@ -1,4 +1,4 @@
-import { initialState, roles, permissionMatrix, descriptions, countryOptions } from "./legacy";
+import { countryOptions } from "./legacy";
 import { SAMPLE_NOW, sampleAt } from "./now";
 import type { OpsRecord, ScreenData, WorkspaceMocks } from "./types";
 
@@ -22,8 +22,7 @@ export const workspace:WorkspaceMocks={
  "PAY-403":[{label:"Eligible gross profit",value:"$4,000.00"},{label:"Trader split",value:"80% · $3,200.00"},{label:"Firm split",value:"20% · $800.00"},{label:"Adjustments",value:"$0.00"}]
  },
  riskLimits:{daily:5,maximum:10,profit:8},discountCap:500,liabilityAllocation:"$24,650",
- now:SAMPLE_NOW,roles,currentAdminId:"staff-001",users:initialState.users,roleDescriptions:descriptions,
- permissions:permissionMatrix.map(item=>({...item,label:item.label.replace("Manage programs, add-ons and payout settings","Manage programs and payout settings").replace("View orders/payments and record refunds","View orders and payments and record refunds").replace("Manage content, templates and competitions","Manage content and templates").replace("View the audit log","View audit log")})),
+ now:SAMPLE_NOW,
  countries:[...countryOptions,{code:"AU",name:"Australia"},{code:"DE",name:"Germany"},{code:"FR",name:"France"},{code:"JP",name:"Japan"}],restrictedCountries:["US","CA"],updatedBy:"Alex Morgan",updatedAt:sampleAt(3600),
  audit:[
  {id:"EVT-1048",at:sampleAt(90),actor:"Alex Morgan",action:"admin.login",entity:"staff-001",ip:"192.0.2.10",before:{outcome:"Not signed in"},after:{outcome:"Sample sign-in"}},

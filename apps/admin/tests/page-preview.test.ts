@@ -12,8 +12,7 @@ describe("temporary page-state previews",()=>{
   vi.stubEnv("NODE_ENV","production");
   expect(await pagePreview(Promise.resolve({state:"error"}))).toBe("default");
  });
- it("preserves the explicitly listed permissions and 11 grouped rules",()=>{
-  expect(workspace.permissions).toHaveLength(16);
+ it("preserves the 11 grouped rules and 10 backup codes",()=>{
   expect(workspace.ruleGroups.flatMap(group=>group.rules)).toHaveLength(11);
   expect(new Set(workspace.backupCodes).size).toBe(10);
  });

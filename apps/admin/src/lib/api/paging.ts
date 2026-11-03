@@ -27,7 +27,8 @@ export type CursorListState<T> = {
 export type CursorListAction<T> =
   | { type: "first-page"; forKey: string; result: ApiResult<T[], PageMeta> }
   | { type: "more-start"; seq: number }
-  | { type: "more-page"; forKey: string; seq: number; result: ApiResult<T[], PageMeta> };
+  | { type: "more-page"; forKey: string; seq: number; result: ApiResult<T[], PageMeta> }
+  | { type: "replace"; item: T };
 
 export function initialCursorList<T>(): CursorListState<T> {
   return { forKey: null, items: [], nextCursor: null, status: "loading", error: null, moreSeq: 0 };
@@ -59,6 +60,10 @@ export function cursorListReducer<T extends { id: string }>(state: CursorListSta
         status: "ready",
         error: null,
       };
+    case "replace":
+      // A record the server just changed, e.g. after an edit: swapped in place, so loaded pages stay.
+      if (!state.items.some((item) => item.id === action.item.id)) return state;
+      return { ...state, items: state.items.map((item) => (item.id === action.item.id ? action.item : item)) };
   }
 }
 

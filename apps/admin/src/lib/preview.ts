@@ -1,6 +1,6 @@
 import { countryOptions, currentPreviewUser, roles } from "../mocks/legacy";
 import type { AdminUser, PreviewState, PreviewCommand } from "../mocks/types";
-export { countryOptions, currentPreviewUser, initialState, permissionMatrix, roles } from "../mocks/legacy";
+export { countryOptions, currentPreviewUser, initialState, roles } from "../mocks/legacy";
 export type { AdminUser, AuditEvent, PreviewState, Role, Settings } from "../mocks/types";
 export type { UserInput, PreviewCommand } from "../mocks/types";
 function validateEmail(email: string) {

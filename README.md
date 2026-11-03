@@ -32,7 +32,7 @@ For the full local stack, see `docs/ADMIN_BUILD_PLAN.md`, step ADM-67. It covers
 
 **Signing in:** open http://127.0.0.1:3101 and sign in with an admin account (ADM-67 creates the first one). The first sign-in sets up 2FA with an authenticator app (scan the QR code); every later sign-in asks for the 6-digit code. Admin sessions end 12 hours after sign-in.
 
-**Backend calls:** every call goes through the API helper in `apps/admin/src/lib/api` (lint blocks direct `fetch` in admin code). Its types come from `apps/admin/contract/openapi.json`, a copy of the backend contract (v1.1.0, backend `dev` at `4b81f8d`). When the backend changes its `openapi.json`, copy the new file there and run `bun run --cwd apps/admin api:types`.
+**Backend calls:** every call goes through the API helper in `apps/admin/src/lib/api` (lint blocks direct `fetch` in admin code). Its types come from `apps/admin/contract/openapi.json`, a copy of the backend contract (v1.1.0, backend `dev` at `4b81f8d`). When the backend changes its `openapi.json`, copy the new file there and run `bun run --cwd apps/admin api:types`. The backend's full permission list is copied there too (`apps/admin/contract/permissions.json`, from its `src/contracts/permissions.ts`), because the contract doesn't list every code yet; a test keeps the app's list (`apps/admin/src/lib/auth/permissions.ts`) equal to it.
 
 ### Checks
 

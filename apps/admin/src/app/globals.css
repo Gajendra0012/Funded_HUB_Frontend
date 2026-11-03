@@ -265,3 +265,23 @@ html {background:var(--admin-canvas);}
  .topbar .session-indicator {grid-column:1/4;grid-row:2;width:auto;order:initial;}
  .phase-grid {grid-template-columns:1fr;}
 }
+/* AO-4 · roles matrix and admin users (live) */
+/* The scroll box holds its absolutely placed children (screen-reader labels), so they can't widen the page on a phone. */
+.table-scroll {position:relative;}
+.permission-table th[scope=row] code {display:block;margin-top:4px;font-size:12px;color:var(--admin-muted);}
+.role-matrix-alert {margin-bottom:24px;}
+.disabled-tip:focus-within>[role=tooltip] {display:block;}
+/* A tooltip never blocks a click on what it covers (e.g. the ••• menu button). */
+.disabled-tip>[role=tooltip] {pointer-events:none;}
+.disabled-tip>button[aria-disabled=true] {opacity:.45;cursor:not-allowed;}
+.admin-theme .disabled-tip>button[aria-disabled=true]:hover {background:var(--glass-light-background);border:var(--admin-border);}
+.member-actions {margin-top:20px;}
+.dialog-note {margin:0;font-size:14px;line-height:1.7;color:var(--admin-muted);}
+.account-results {border:0;padding:0;margin:0;display:grid;gap:8px;min-width:0;}
+.account-results legend {margin-bottom:8px;}
+.account-option {display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:var(--admin-border);border-radius:var(--radius-control);background:var(--admin-fill);cursor:pointer;}
+.account-option:has(input:checked) {border-color:var(--accent-2);}
+/* The shared form rules size every non-checkbox input to the full width; a radio stays a radio. */
+.ops-form .account-option>input[type=radio] {flex:none;width:16px;height:16px;min-height:0;padding:0;margin:3px 0 0;accent-color:var(--admin-blue);}
+.account-option>span {display:grid;gap:2px;min-width:0;overflow-wrap:anywhere;}
+.filter-note {margin:0;padding:0 16px 12px;}

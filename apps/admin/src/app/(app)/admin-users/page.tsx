@@ -1,5 +1,14 @@
-import { workspace } from "@/mocks/workspace";
-import { pagePreview, type PreviewSearch } from "@/lib/page-preview";
-import { PageHeading, PageStateView } from "@/components/ops-common";
 import { AdminUsersScreen } from "@/components/admin-users-screen";
-export default async function Page({searchParams}:{searchParams:PreviewSearch}) {const state=await pagePreview(searchParams);return <><PageHeading title="Admin users" section="People" description="Manage staff roles and enrollment status."/><PageStateView state={state} title="Admin users"><AdminUsersScreen data={workspace}/></PageStateView></>;}
+import { PageHeading } from "@/components/ops-common";
+import { verifyAdminSession } from "@/lib/auth/session";
+
+export default async function Page() {
+  // Already checked by the layout for this request (cached): used here to mark the signed-in admin's row.
+  const session = await verifyAdminSession();
+  return (
+    <>
+      <PageHeading title="Admin users" section="People" description="Who can use the admin app, their roles and their 2FA." />
+      <AdminUsersScreen currentProfileId={session.userId} />
+    </>
+  );
+}

@@ -2,7 +2,7 @@
 
 ## UI-ONLY RULES
 
-**Status (3 November 2026):** these rules were for the visual preview. The build plan (`docs/ADMIN_BUILD_PLAN.md`) has since added real login with mandatory 2FA, `proxy.ts` and the session (AO-2), and the one API helper in `apps/admin/src/lib/api` (AO-3); screens move from mocks to the API one by one. The visual rules (brand, tokens, motion, density) still apply.
+**Status (3 November 2026):** these rules were for the visual preview. The build plan (`docs/ADMIN_BUILD_PLAN.md`) has since added real login with mandatory 2FA, `proxy.ts` and the session (AO-2), and the one API helper in `apps/admin/src/lib/api` (AO-3); screens move from mocks to the API one by one. Live so far: Roles and Admin users (AO-4, 3 November); on those pages the top bar says "Live data" instead of "Sample data". The visual rules (brand, tokens, motion, density) still apply.
 
 Visual work only, in apps/admin and packages/ui. No API calls, no auth logic, no proxy.ts, no cookies or sessions, no zod validation, no changes to apps/api, packages/db or packages/shared. All data comes from typed mock files in apps/admin/src/mocks (one types file), passed into components through props, so swapping in real data later only replaces the source. Buttons that would perform an action only open the matching dialog or show a toast. Use the frontend-design skill and follow DESIGN.md (admin variant: dark, dense, calm, no video, no 3D, no parallax, motion limited to 150 to 200ms transitions). If screens already exist from earlier work, restyle them instead of rebuilding. Keep tokens, fonts and tests. Explain non-obvious decisions briefly.
 

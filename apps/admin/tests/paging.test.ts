@@ -27,6 +27,14 @@ describe("cursor paging (ADM-10)", () => {
     expect(second).toMatchObject({ nextCursor: null, status: "ready" });
   });
 
+  it("swaps in the server's new copy of an edited row, keeping the loaded pages (AO-4)", () => {
+    const first = loaded(["a", "b"], "c1");
+    const edited = reduce(first, { type: "replace", item: { id: "b", name: "Edited" } });
+    expect(edited.items).toEqual([row("a"), { id: "b", name: "Edited" }]);
+    expect(edited).toMatchObject({ nextCursor: "c1", status: "ready", forKey: "k1" });
+    expect(reduce(first, { type: "replace", item: { id: "zz", name: "Not loaded" } })).toBe(first);
+  });
+
   it("ignores an answer for older filters or an older request", () => {
     const first = loaded(["a"], "c1");
     const loading = reduce(first, { type: "more-start", seq: first.moreSeq + 1 });

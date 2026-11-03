@@ -1,5 +1,5 @@
 import { sampleAt } from "./now";
-import type { PreviewState, Role } from "./types";
+import type { PreviewState } from "./types";
 export const roles = ["Admin", "Risk", "Support", "Finance"] as const;
 export const countryOptions = [
   { code: "US", name: "United States" }, { code: "GB", name: "United Kingdom" },
@@ -25,25 +25,6 @@ export const initialState: PreviewState = {
   settings: { platformName: "Funded HUB", supportEmail: "support@example.com", restrictedCountries: [] },
 };
 
-// Display-only reference from Sprint 1 Detailed Plan pp. 10–11, not an authorization policy.
-export const permissionMatrix: { label: string; allowed: readonly Role[] }[] = [
-  { label: "View traders and accounts", allowed: roles },
-  { label: "Edit trader details", allowed: ["Admin", "Support"] },
-  { label: "Manage programs, add-ons and payout settings", allowed: ["Admin"] },
-  { label: "Publish rule sets", allowed: ["Admin", "Risk"] },
-  { label: "View risk monitor and violations", allowed: ["Admin", "Risk", "Support"] },
-  { label: "Take risk actions", allowed: ["Admin", "Risk"] },
-  { label: "Review abuse flags", allowed: ["Admin", "Risk"] },
-  { label: "Review KYC", allowed: ["Admin", "Support"] },
-  { label: "View orders/payments and record refunds", allowed: ["Admin", "Finance"] },
-  { label: "Approve payouts", allowed: ["Admin", "Finance"] },
-  { label: "Manage affiliates and discount codes", allowed: ["Admin", "Finance"] },
-  { label: "Manage content, templates and competitions", allowed: ["Admin", "Support"] },
-  { label: "View reports and exports", allowed: ["Admin", "Risk", "Finance"] },
-  { label: "Manage admin users and roles", allowed: ["Admin"] },
-  { label: "View the audit log", allowed: ["Admin", "Risk", "Finance"] },
-  { label: "Change system settings", allowed: ["Admin"] },
-];
 export const currentPreviewUser = "staff-001";
 
 export const descriptions = ["Platform ownership and access administration.","Risk oversight, rule publishing and investigation.","Trader assistance, KYC and content operations.","Payments, payout reviews and financial reporting."];

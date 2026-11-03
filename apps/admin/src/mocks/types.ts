@@ -21,7 +21,7 @@ export type Queue = { title:string; count:string; detail:string; href:string; ol
 export type EquityTick = { at:string; position:number };
 export type DashboardData = { metrics:Metric[]; violations:Violation[]; connections:Connection[]; queues:Queue[]; equity:number[]; equityAccount:string; equityFloor:number; equityTarget:number; equityTicks:EquityTick[]; asOf:string };
 
-export type PreviewConfig = {roles:readonly Role[];countryOptions:{code:string;name:string}[];permissionMatrix:{label:string;allowed:readonly Role[]}[];currentPreviewUser:string;descriptions:string[]};
+export type PreviewConfig = {roles:readonly Role[];countryOptions:{code:string;name:string}[];currentPreviewUser:string;descriptions:string[]};
 
 export type UserInput = Pick<AdminUser, "name" | "email" | "roles">;
 export type PreviewCommand =
@@ -37,11 +37,10 @@ export type OpsRecord = {usage:{daily:number;maxLoss:number;profit:number;lag:st
 export type ScreenData = {title:string;section:string;description:string;records:OpsRecord[];columns:{key:keyof OpsRecord;label:string;mono?:boolean}[];metrics:{label:string;value:string}[]};
 export type RuleGroup = {title:string;rules:{id:string;label:string;value:string;unit:string;description:string}[]};
 export type WorkspaceMocks = {
- now:string;roles:readonly Role[];currentAdminId:string;
+ now:string;
  violationSnapshots:Record<string,{facts:{label:string;value:string}[];value:number;limit:number;equity:number[];floor:number;target:number}>;identityFacts:{country:string;document:string;birth:string;address:string};
  paymentFacts:{expected:string;network:string;confirmations:string};payoutBreakdown:Record<string,{label:string;value:string}[]>;
- riskLimits:{daily:number;maximum:number;profit:number};discountCap:number;liabilityAllocation:string;users:AdminUser[];
- permissions:{label:string;allowed:readonly Role[]}[];roleDescriptions:readonly string[];
+ riskLimits:{daily:number;maximum:number;profit:number};discountCap:number;liabilityAllocation:string;
  countries:{code:string;name:string}[];restrictedCountries:string[];updatedBy:string;updatedAt:string;
  audit:AuditEvent[];screens:Record<string,ScreenData>;risk:OpsRecord[];
  checks:{label:string;passed:boolean;detail:string}[];payoutChecks:{label:string;passed:boolean;detail:string}[];

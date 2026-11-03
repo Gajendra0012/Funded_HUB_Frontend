@@ -1,0 +1,23 @@
+{
+  "source": "Copy of PermissionCode in the backend's src/contracts/permissions.ts (Gajendra0012/Funded_Hub_backend, dev at 1d4c8bf). The contract (openapi.json) doesn't list every code yet, so copy this list again when the backend changes it.",
+  "codes": [
+    "traders.read",
+    "traders.update",
+    "kyc.review",
+    "programs.manage",
+    "rules.publish",
+    "instruments.manage",
+    "risk.action",
+    "risk.review",
+    "orders.read",
+    "refunds.create",
+    "payouts.approve",
+    "payouts.send",
+    "affiliates.manage",
+    "discounts.manage",
+    "notifications.manage",
+    "settings.manage",
+    "admins.manage",
+    "audit.read"
+  ]
+}
