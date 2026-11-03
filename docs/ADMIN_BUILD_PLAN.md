@@ -1,27 +1,243 @@
 # Admin App Build Plan
 
-**Goal:** build the Funded HUB admin app (`apps/admin`) completely and correctly, one small step at a time.
+**Goal:** build the Funded HUB admin app (`apps/admin`) completely and correctly. We work **one build order at a time**, starting with what Sprint 1 needs.
 
 - Created: 2 Nov 2026
-- Last updated: 2 Nov 2026
-- Progress: **0 of 66 steps done**
+- Last updated: 3 Nov 2026 (rebuilt around the backend's new admin API and the Sprint 1 deadline)
+- Progress: **0 of 69 steps done** · next order: **AO-1**
 
 ---
 
-## 1. How we work
+## 1. Sprint 1 target: due for the demo on Wed 4 Nov
 
-1. **One step at a time, in order.** Finish the current step before starting the next.
-2. **Small steps.** Each step is one feature or one part of a screen.
-3. **Blocked step?** Mark it ⏸, write down why, and move to the next step that isn't blocked. Come back when the blocker is solved.
-4. **Read first.** Before coding, read:
-   - `docs/ADMIN_UI_RULES.md` and `DESIGN.md` (look and feel)
-   - the Next.js 16 guide in `node_modules/next/dist/docs/` (this Next.js version has breaking changes)
-   - the backend API contract (`Funded_Hub_backend/openapi.json`) for any screen that uses the API
-5. **No guessing data.**
-   - If the API is **defined** but not live yet, build against the contract types, using sample data that matches the contract exactly.
-   - If **no API is defined**, don't invent the data shape. Get the contract from the backend first.
-6. **No fake security.** The UI must never pretend that login, 2FA or permissions work when they don't. The backend decides permissions; the UI only hides what the user can't use.
-7. **Commits.** One commit per step, with the step ID in the message (for example `ADM-05: real permission list`). We need push access to the repo first.
+The client's payment plan (Instalment 1, Sprint 1, 26 Oct – 4 Nov) promises:
+
+> **Admin panel with mandatory 2FA, roles and audit log**
+
+The client checks it like this before paying, on **staging**:
+
+> **Admin login requires 2FA; actions appear in the audit log.**
+
+### What is done and what is left (Sprint 1 admin tasks)
+
+| Task | What the sprint asks | Admin app today | Backend `dev` today | Left to do | Order |
+|---|---|---|---|---|---|
+| AD1-01 | Admin app shell | ☑ Done (visual) | n/a | Nothing for Sprint 1 | — |
+| AD1-02 | Admin login with **mandatory 2FA** | Preview only: no real login | ✅ Every admin call requires a 2FA session (`aal2`); local 2FA switched on | Real Supabase login, 2FA setup on first login, 2FA code on every login | AO-2 |
+| AD1-03 | Admin users: list, add, disable, reset 2FA, roles | Preview with sample data | ✅ List, add (existing account), change roles, disable/enable · ❌ reset 2FA · ❌ email invites | Connect the screen to the API | AO-4 |
+| AD1-04 | Roles and permissions view | Preview with the old 16 permissions | ✅ `GET /admin/roles` (4 roles, 18 permissions) | Show the live matrix | AO-4 |
+| AD1-05 | Audit log viewer | Preview with sample data | ✅ `GET /admin/audit-logs` with filters · ❌ IP filter · ❌ actor names | Connect the screen to the API | AO-5 |
+| AD1-06 | System settings | Preview (restricted countries only) | ✅ 7 settings, each saved with an audit record | Connect the screen to the API | AO-6 |
+| AD1-07 | Page protection, permission checks, 12-hour session, 2FA again for sensitive actions | Not built | ✅ Permission check on every call · ❌ "who am I" · ❌ re-auth check · ❌ 12-hour limit | Page protection, permission handling, step-up 2FA, session limit | AO-2, AO-3, AO-7 |
+| — | Live on **staging** | Not deployed | Not deployed | Deploy admin app and backend, create the first admin there | AO-8 |
+
+✅ = built and tested on backend `dev` · ❌ = missing on the backend (see section 6, "Backend gaps")
+
+**Short answer: what's left for Sprint 1.**
+- **Frontend work (AO-1 to AO-7):**
+  - real login with mandatory 2FA
+  - page protection
+  - one API helper
+  - live roles, admin users, audit log and settings
+  - a fresh 2FA check before sensitive actions
+- **Deployment to staging (AO-8):** needs a staging backend and hosted Supabase. Those are not confirmed yet; ask the manager.
+- **Backend gaps:** a few small ones (section 6). The panel works around each, but the backend should close them.
+
+### Is it doable today?
+
+The rough estimate for AO-1 to AO-7 is **10–12 hours of focused work**. That's tight for one day.
+
+- **Biggest risk:** staging (AO-8). Without a deployed backend and hosted Supabase, the demo can only run on this computer.
+- **If time runs out, keep these first:**
+  - AO-2 (login + 2FA)
+  - AO-5 (audit log)
+  - one action that writes to the audit log (role change in AO-4, or a setting in AO-6)
+
+  Together these prove the client's check: "admin login requires 2FA; actions appear in the audit log".
+
+Not part of this plan: the Sprint 1 line "Staging site: registration, email verification, login, password reset, 2FA" is the **trader website** (`apps/web`), which still uses the sample's demo login.
+
+---
+
+## 2. Build orders (do them in this order)
+
+### How every build order works
+
+1. **Read first:**
+   - the backend's `docs/ADMIN_API.md` and `openapi.json` (contract **v1.1.0**, backend `dev` at `4b81f8d`)
+   - `docs/ADMIN_UI_RULES.md` and `DESIGN.md`
+   - the Next.js 16 guide in `node_modules/next/dist/docs/`
+   - the project's Engineering Standards
+2. **Check before building.**
+   - New packages: check their current versions and security advisories.
+   - Gaps or conflicts in the order: report them **before** building. Stop if one blocks the work.
+3. **Build production-grade:**
+   - secure
+   - typed
+   - tested
+   - no secrets in the browser (only the Supabase publishable key)
+   - no fake success (if something isn't connected, the UI says so)
+4. **Finish with the "Done means" checklist** (section 3), then **report back:**
+   - files changed
+   - commands run
+   - test and check results
+   - commit hash
+   - gaps found
+   - anything the backend engineer must know
+5. **Commit:** one commit per order on the frontend `dev` branch, with the order and step IDs in the message, e.g. `AO-2 (ADM-12, ADM-13): real login with mandatory 2FA`. Push only when the user says so.
+
+### Order list
+
+| Order | Goal | Steps | Needed for | Rough time | Status |
+|---|---|---|---|---|---|
+| **AO-1** | Run the real backend locally and create the first admin | ADM-67, ADM-07, ADM-01 | Sprint 1 | 1 h | ☐ |
+| **AO-2** | Login with mandatory 2FA, page protection, sign out | ADM-11, ADM-12, ADM-13, ADM-14, ADM-15, ADM-16 | Sprint 1 | 3 h | ☐ |
+| **AO-3** | One API helper, paging, error and permission handling | ADM-08, ADM-09, ADM-10, ADM-06, ADM-18 | Sprint 1 | 2 h | ☐ |
+| **AO-4** | Roles matrix and admin users, live | ADM-05, ADM-34 | Sprint 1 | 2 h | ☐ |
+| **AO-5** | Audit log, live | ADM-35 | Sprint 1 | 1 h | ☐ |
+| **AO-6** | Settings, live | ADM-36 | Sprint 1 | 1 h | ☐ |
+| **AO-7** | Fresh 2FA before sensitive actions, bug fixes, Sprint 1 demo check | ADM-19, ADM-03, ADM-69 | Sprint 1 | 1.5 h | ☐ |
+| **AO-8** | Admin app on staging | ADM-68 | Sprint 1 (client acceptance) | 1 h + infra | ⏸ needs staging infra |
+| **AO-9** | Programs: list, details, create, edit, status | ADM-20, ADM-21, ADM-22, ADM-23 | Manager demo Fri 6 Nov | 2.5 h | ☐ |
+| **AO-10** | Rule sets: versions, drafts, publish, compare | ADM-30, ADM-31, ADM-32, ADM-33 | Manager demo Fri 6 Nov | 2 h | ☐ |
+| **AO-11** | Program details: phases, sizes, add-ons, payout policy, scaling, pairs | ADM-24 – ADM-29 | Manager demo Fri 6 Nov | 3 h | ☐ |
+| **AO-12** | Traders: list, detail, edit, status | ADM-44 (list and detail), ADM-45 | Sprint 2 | 2 h | ☐ |
+| **AO-13** | Tidy-up: dead code, old notes | ADM-02, ADM-04 | Any time | 1 h | ☐ |
+| **AO-14+** | Everything that waits for backend APIs, grouped when each API is defined | ADM-37, ADM-38, ADM-39 – ADM-43, ADM-46 – ADM-61 | Sprints 2–6 | — | ⏸ needs API |
+| **AO-last** | Finish: security headers, test IDs, remove fake data, phone and accessibility pass, final check | ADM-62 – ADM-66 | Before launch | — | ☐ |
+
+### Order cards (Sprint 1 and the Fri 6 Nov demo)
+
+#### AO-1 · Local stack and first admin
+- **Steps:**
+  - ADM-67: run backend `dev` locally and create the first admin
+  - ADM-07: admin app settings
+  - ADM-01: admin in the main checks
+- **Before you start:**
+  - Docker Desktop is running.
+  - Node 26 + npm 12 for the backend.
+  - Node 24 + Bun for the frontend.
+- **Done when:**
+  - the backend answers `http://127.0.0.1:4000/health`
+  - a first admin with the ADMIN role exists in local Supabase
+  - the admin app starts with its settings, and stops with a clear message without them
+  - `bun run typecheck` and `bun run test` cover both apps
+- **Not in this order:** any screen changes.
+
+#### AO-2 · Login with mandatory 2FA
+- **Steps:**
+  - ADM-11: Supabase connection
+  - ADM-12: login
+  - ADM-13: 2FA setup
+  - ADM-14: 2FA code on every login
+  - ADM-15: sign out and session
+  - ADM-16: page protection
+- **Done when:**
+  - no admin page opens without password **and** a 6-digit code
+  - a new admin must set up 2FA before anything else
+  - a wrong code is refused
+  - sign out works
+  - the session ends after 12 hours
+- **Tests:**
+  - unit tests for "which login step to show" and the page-protection rules
+  - one manual run with a real authenticator app
+- **Not in this order:** backup codes (ADM-17, D3) and hiding buttons by permission (ADM-18).
+
+#### AO-3 · Talk to the backend
+- **Steps:**
+  - ADM-08: API types
+  - ADM-09: API helper
+  - ADM-10: paging
+  - ADM-06: error pages
+  - ADM-18: permission handling, fallback version
+- **Done when:**
+  - every call goes through one helper with the 2FA token
+  - each error code shows a clear message
+  - lists load more with the cursor
+  - a refused page (403) shows "You don't have permission for this page"
+  - a crash shows the error page with Retry
+- **Tests:** unit tests for every error code, paging, and a missing or expired token.
+
+#### AO-4 · Roles and admin users
+- **Steps:** ADM-05 (live roles matrix), ADM-34 (admin users).
+- **Done when:**
+  - Roles: shows the live 4 roles × 18 permissions.
+  - Admin users, list: search and status work.
+  - Admin users, add: find an existing account by email, give it one or more roles.
+  - Admin users, manage: change roles, disable, re-enable.
+  - The backend's refusals show clearly: changing your own access, or removing the last admin.
+  - Every change shows up in the audit log.
+- **Not in this order:** reset 2FA and email invitations. They're backend gaps G2 and G3; the buttons say "Not available yet".
+
+#### AO-5 · Audit log
+- **Steps:** ADM-35.
+- **Done when:**
+  - real entries show, newest first
+  - filters work: actor, action, entity type, date range (UTC)
+  - "Load more" works
+  - the details drawer shows before/after values, IP, browser and request ID
+- **Not in this order:** an IP filter on the server (gap G6). Until then it filters only the loaded rows, and says so.
+
+#### AO-6 · Settings
+- **Steps:** ADM-36.
+- **Done when:**
+  - all 7 settings load and save
+  - backend validation errors show next to the field
+  - the restricted-countries editor works
+  - every save shows up in the audit log
+- **Not in this order:** KYC gates (ADM-37, D4).
+
+#### AO-7 · Sensitive actions and the Sprint 1 check
+- **Steps:**
+  - ADM-19: fresh 2FA code before sensitive actions
+  - ADM-03: UI bug fixes
+  - ADM-69: Sprint 1 demo check
+- **Done when:**
+  - changing roles, disabling an admin and changing a setting first ask for a fresh 2FA code
+  - the Sprint 1 demo script (ADM-69) passes end to end on this computer
+  - all checks pass
+  - the work is committed
+- **Not in this order:** backend enforcement of the fresh code (gap G4).
+
+#### AO-8 · Staging
+- **Steps:** ADM-68.
+- **Blocked by:** a staging backend, hosted Supabase (2FA on) and a host for the admin app. Owner: the manager and backend engineer.
+- **Done when:** the Sprint 1 demo script passes on the staging address.
+
+#### AO-9 · Programs
+- **Steps:** ADM-20 – ADM-23.
+- **Done when:**
+  - programs from the live API show, with filters
+  - a program can be created and edited
+  - status changes work
+  - a blocked change shows the backend's reason
+
+#### AO-10 · Rule sets
+- **Steps:** ADM-30 – ADM-33.
+- **Done when:**
+  - a program's versions show
+  - a draft can be created and edited
+  - publishing freezes the draft (Admin only)
+  - two versions can be compared
+
+#### AO-11 · Program details
+- **Steps:** ADM-24 – ADM-29.
+- **Done when:**
+  - a full 2-Step program can be built through the panel
+  - it can be switched to Active with real data: phases on published rule sets, a size, a payout policy
+
+---
+
+## 3. Rules for every step
+
+1. **One build order at a time, in order.** If a step is blocked, mark it ⏸ with the reason and move on.
+2. **No guessing data.**
+   - Use the backend contract (`openapi.json` v1.1.0) exactly.
+   - Screens with no API yet stay as the clearly labelled preview until the backend defines their API.
+3. **No fake security.**
+   - The UI never pretends login, 2FA or permissions work when they don't.
+   - The backend decides permissions; the UI only hides or explains what you can't use.
+4. **Money is text, times are UTC.** Never do decimal maths on prices in the browser.
 
 ### Done means
 
@@ -30,76 +246,70 @@ A step is ☑ only when all of these are true:
 - [ ] `bun run lint` passes
 - [ ] Admin type check passes (`bun run --cwd apps/admin typecheck`)
 - [ ] Admin tests pass, and new logic has new tests (`bun run --cwd apps/admin test`)
-- [ ] The page opens and works in the browser at http://127.0.0.1:3101, on desktop and phone width
+- [ ] Screens that use the API work against the **local backend `dev`** with a real 2FA (`aal2`) session
+- [ ] The page works at http://127.0.0.1:3101 on desktop and phone width
 - [ ] Every new button and form field has a `data-testid`
 - [ ] This file is updated: status, date, short note
 
-### Legend
-
 **Status:** ☐ to do · ◐ in progress · ☑ done · ⏸ blocked
 
-**Backend:**
-
-| Tag | Meaning |
-|---|---|
-| **Frontend only** | No backend needed |
-| **Supabase** | Uses Supabase Auth directly |
-| **API defined** | In backend contract v1, but not coded yet |
-| **Needs API** | Database table exists, no endpoint yet |
-| **Decision** | Waiting for a decision (see section 5) |
+**Backend tags:**
+- **Live:** built on backend `dev`
+- **Supabase:** Supabase Auth, used directly
+- **Needs API:** database table exists, no endpoint yet
+- **Gap:** see section 6
+- **Decision:** see section 7
 
 ---
 
-## 2. Where we are today (2 Nov 2026)
+## 4. Where we are (3 Nov 2026)
 
-- **The admin app is a visual preview only.** All 22 screens look finished, but:
-  - all data is fake (`apps/admin/src/mocks`)
-  - every button only shows a "Sample… previewed" message
-  - there is no login, 2FA, session, page protection, permission check, paging or live data
-- **The backend API defines only Programs and Rule sets.** That's 22 admin endpoints, and none are coded yet. Every other admin screen needs backend endpoints first.
-- **2FA is switched off** in the backend's local Supabase config (`supabase/config.toml`: `enroll_enabled = false`, `verify_enabled = false`). Admin 2FA can't be tested locally until it's switched on.
-- **The admin install was fixed on 2 Nov 2026.** `apps/admin` was added to the workspaces, so the app now installs and runs.
+### Admin app
 
-### What we can build before the backend is finished
+- **A visual preview only.**
+  - 22 screens on sample data (`apps/admin/src/mocks`).
+  - Every button only shows a "Sample… previewed" message.
+  - No login, 2FA, session, page protection, permission check or paging.
+- **New readable colour palette** (2 Nov). It's in `packages/ui`, not committed yet.
+- **The app installs and runs** (workspace fix of 2 Nov) on the frontend `dev` branch.
 
-| Steps | What they need | Can we build now? |
-|---|---|---|
-| Phase 0–1 (ADM-01 – 10) | Nothing from the backend. The API types come from `openapi.json`, which already exists. | **Yes** |
-| Phase 2 (ADM-11 – 16) | Only Supabase, running locally from the backend repo (Docker). Not the backend code. One small config change: switch TOTP 2FA on in `supabase/config.toml`. | **Yes**, after that config change |
-| Phase 3–4 (ADM-20 – 33) | The API is **defined** in the contract but not coded. We build in **sample mode** (see ADM-09): sample answers shaped exactly like the contract. When the backend endpoints are ready, we switch one setting to live and test again. | **Yes**, in sample mode |
-| ADM-17 – 19, 37, 61 | Decisions D2–D6 | No, blocked |
-| Phase 5–9 (ADM-34 – 60) | **No API defined yet.** We would have to guess the data, which breaks rule 5. | **No.** These screens stay as the current preview until the backend defines their API. |
-| Phase 10 (ADM-62 – 66) | Nothing; done at the end | Yes, at the end |
+### Backend (`dev` at `4b81f8d`, 3 Nov)
 
-So the work order doesn't change. When we reach Phase 5, the backend must at least have **defined** the API for that screen; it doesn't need to be coded yet.
+The backend `dev` branch = the backend work (NestJS foundation, contract, risk engine) plus 3 admin commits by DhruvVerseX:
 
----
+- **Contract v1.1.0:** 13 new admin operations plus the 22 program and rule-set operations, **35 admin routes in total**.
+- **Every admin call checks** a verified Supabase login, the 2FA level `aal2`, an active admin membership and the permission, all from the database.
+- **Every change and its audit record are saved together:** if the audit record fails, the change is undone.
+- **Built-in protections:** you can't lock yourself out, and the last active admin can't be removed.
+- **Local Supabase now has TOTP 2FA switched on.**
+- **CORS:** only `APP_URL` and `ADMIN_URL` may call the API. `ADMIN_URL` must equal the admin app's address exactly; locally that's `http://127.0.0.1:3101`.
+- **Tests:** 731 unit tests and 13 real-database tests passed (backend's own report).
+- **Not tested by the backend:** hosted Supabase login and 2FA, and the frontend connection.
 
-## 3. Build order (overview)
+Routes the Sprint 1 screens use:
 
-| Phase | Steps | What | Why this order |
+| Method | Route | Permission | Used by |
 |---|---|---|---|
-| 0 | ADM-01 – 06 | Clean base | Fix the base before adding anything |
-| 1 | ADM-07 – 10 | Connect to the backend | Every real screen needs the API layer |
-| 2 | ADM-11 – 19 | Login and security | The admin API refuses calls without login + 2FA |
-| 3 | ADM-20 – 29 | Programs | Only area with an API defined; in the manager's demo on Fri 6 Nov |
-| 4 | ADM-30 – 33 | Rule sets | API defined; programs need published rule sets |
-| 5 | ADM-34 – 38 | Core admin | Admin users, audit log, settings, instruments |
-| 6 | ADM-39 – 43 | Orders and payments | Backend week 2 (9–13 Nov) |
-| 7 | ADM-44 – 53 | Trading operations | Backend week 3 (16–20 Nov, Demo 3) |
-| 8 | ADM-54 – 58 | Money out | Backend week 4 (23–27 Nov) |
-| 9 | ADM-59 – 61 | Dashboard and reports | Needs data from all the areas above |
-| 10 | ADM-62 – 66 | Finish | Security, clean-up, final checks |
+| GET / POST | `/api/v1/admin/users` | `admins.manage` | Admin users (list, add) |
+| GET / PATCH / DELETE | `/api/v1/admin/users/{id}` | `admins.manage` | Admin users (detail, roles, status, disable) |
+| GET | `/api/v1/admin/roles` | `admins.manage` | Roles matrix |
+| GET | `/api/v1/admin/traders` | `traders.read` | Finding an account to make admin; Traders screen |
+| GET / PATCH | `/api/v1/admin/traders/{id}` | `traders.read` / `traders.update` | Traders screen |
+| GET | `/api/v1/admin/settings` | `settings.manage` | Settings |
+| GET / PUT | `/api/v1/admin/settings/{key}` | `settings.manage` | Settings |
+| GET | `/api/v1/admin/audit-logs` | `audit.read` | Audit log |
+
+Programs and rule sets: 22 routes, all `programs.manage` except publishing (`rules.publish`). The full list is in the backend's `docs/ADMIN_API.md`.
 
 ---
 
-## 4. Steps
+## 5. Steps
 
-### Phase 0: Clean base
+### Base and setup
 
 #### ADM-01 · Add the admin app to the main checks ☐
 - **Build:** make the root `typecheck`, `test` and `build` scripts check `apps/admin` too. Today they only check `apps/web`.
-- **Backend:** Frontend only
+- **Backend:** Frontend only · **Order:** AO-1
 - **Done when:** `bun run typecheck`, `bun run test` and `bun run build` cover both apps and pass.
 
 #### ADM-02 · Remove dead code ☐
@@ -108,36 +318,37 @@ So the work order doesn't change. When we reach Phase 5, the backend must at lea
   - `usePreview` and the unused `PreviewProvider` config and state
   - `mocks/screenshot-pages.ts`
   - unused mock fields
-- **Decide in this step:** keep or remove the old `applyPreviewCommand` reducer. Only its tests use it.
-- **Backend:** Frontend only
-- **Done when:** the app looks and works exactly the same, and all checks pass.
+- **Decide in this step:** keep or remove the old `applyPreviewCommand` reducer (only its tests use it).
+- **Backend:** Frontend only · **Order:** AO-13
+- **Done when:** the app looks and works the same, and all checks pass.
 
 #### ADM-03 · Fix UI bugs ☐
 - **Build:**
-  - The sidebar highlights the right item on detail pages (e.g. `/traders/TRD-1042`) and on alias pages (`/users`, `/audit`, `/kyc-queue`).
-  - The dashboard KYC card links to `/kyc`, not the alias.
-  - Admin users: remove the date filter that does nothing.
-  - Admin users: don't offer "Disable" for admins who are already disabled.
+  - The sidebar highlights the right item on detail pages and alias pages (`/users`, `/audit`, `/kyc-queue`).
+  - The dashboard KYC card links to `/kyc`.
   - Toasts close by themselves after a few seconds.
-- **Not in this step:** mistakes inside the fake data. The fake data will be replaced by real data later.
-- **Backend:** Frontend only
+  - The admin-users screen's ignored date filter and "Disable" for disabled admins: fixed in ADM-34 when the screen goes live.
+- **Backend:** Frontend only · **Order:** AO-7
 - **Done when:** each bug is fixed and covered by a test where possible.
 
 #### ADM-04 · Update the old notes ☐
 - **Build:** fix `docs/admin-preview.md` and `apps/admin/VISUAL_AUDIT.md`:
   - pnpm → bun
   - the test count
-  - remove features that no longer exist
-- **Backend:** Frontend only
+  - features that no longer exist
+  - the new palette
+- **Backend:** Frontend only · **Order:** AO-13
 - **Done when:** the notes match the code.
 
-#### ADM-05 · Use the real permission list ☐
+#### ADM-05 · Live roles and permissions matrix ☐
 - **Build:**
-  - Replace the 16 old permissions with the backend's **18 permissions and 4 roles**, exactly as in `Funded_Hub_backend/supabase/seed.sql` and `src/contracts/permissions.ts`. The full matrix is below.
-  - The Roles page shows this matrix.
-  - Put it in one shared file, because steps ADM-18 and later will use it to hide buttons.
-- **Backend:** Frontend only (copies the backend list)
-- **Done when:** the Roles page shows the 18 permissions with the right roles, and a test checks the list against the backend's.
+  - The Roles page shows the matrix from `GET /admin/roles`: 4 roles, each with its permissions.
+  - Keep one shared list of the 18 permission codes in the frontend. It's used for the column order and, later, for hiding buttons (ADM-18).
+  - Remove the 16 old permissions.
+- **Permission:** `admins.manage` · **Backend:** Live · **Order:** AO-4
+- **Done when:**
+  - the page shows the live matrix
+  - a test checks that the frontend's 18 codes match the backend's `permissions.ts`
 
 | Permission | ADMIN | RISK | SUPPORT | FINANCE |
 |---|:-:|:-:|:-:|:-:|
@@ -163,303 +374,355 @@ So the work order doesn't change. When we reach Phase 5, the backend must at lea
 #### ADM-06 · Real loading, error and not-found pages ☐
 - **Build:**
   - `loading.tsx`, `error.tsx` and `not-found.tsx` for the admin pages
-  - one shared "what went wrong" message component, ready for real API errors
-- **Backend:** Frontend only
-- **Done when:** a crashing page shows the error page, not a blank screen, and you can retry from it.
+  - one shared "what went wrong" panel for API errors, with Retry
+- **Backend:** Frontend only · **Order:** AO-3
+- **Done when:** a crashing page shows the error page, not a blank screen, and Retry works.
 
-### Phase 1: Connect to the backend
+#### ADM-67 · Run the backend locally and create the first admin ☐ *(added 3 Nov)*
+- **Build:**
+  1. **Backend `dev` in its own folder** (so the local `saurabh-backend` checkout is untouched):
+
+     `git worktree add ../Funded_Hub_backend-dev origin/dev`
+
+     Then `npm ci` with Node 26.
+  2. **Start local Supabase** from that folder:
+     - First create the local signing key: `npm run supabase:signing-key`. It isn't committed. Without it, login tokens use the old HS256 signing, which the backend refuses.
+     - Then run `npx supabase start` (Docker). 2FA is already switched on there.
+     - Only one local Supabase can run at a time.
+  3. **Backend `.env`:** copy `.env.example`, then set:
+     - the Supabase URL and keys from `npx supabase status`
+     - `ADMIN_URL=http://127.0.0.1:3101`
+     - `APP_URL=http://127.0.0.1:3000`
+
+     Then run `npm run dev` (port 4000).
+  4. **First admin:**
+     - In Supabase Studio, go to **Authentication → Users → Add user** (email + password, auto-confirm).
+     - Then run this SQL in the Studio SQL editor:
+
+```sql
+insert into public.admin_members (profile_id)
+select id from public.profiles where email = 'admin@example.com';
+
+insert into public.admin_member_roles (admin_member_id, role_id)
+select am.id, r.id
+from public.admin_members am
+join public.profiles p on p.id = am.profile_id
+join public.roles r on r.code = 'ADMIN'
+where p.email = 'admin@example.com';
+```
+
+- **Backend:** Live + Supabase · **Order:** AO-1
+- **Done when:** `/health` answers, and the first admin exists with the ADMIN role.
 
 #### ADM-07 · App settings (environment) ☐
-- **Build:** `apps/admin/.env.example` with:
-  - the API address
-  - `NEXT_PUBLIC_SUPABASE_URL`
-  - the Supabase **publishable** key (never the secret key)
+- **Build:**
+  - `apps/admin/.env.example` (committed), plus `.env.local` (not committed) with:
+    - `NEXT_PUBLIC_SUPABASE_URL`
+    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (never the secret key)
+    - `NEXT_PUBLIC_ADMIN_API_URL`
   - a startup check that stops with a clear message if a value is missing
-- **Backend:** Frontend only
+- **Backend:** Frontend only · **Order:** AO-1
 - **Done when:** the app starts with the settings and stops with a clear message without them.
 
+### Talking to the backend
+
 #### ADM-08 · API types from the backend contract ☐
-- **Build:** a script that generates TypeScript types from the backend's `openapi.json`. The generated file is committed, so everyone uses the same contract version.
-- **Backend:** API defined (contract v1)
-- **Done when:** the types for all 22 admin operations exist and the type check passes.
+- **Build:**
+  - Save a copy of the backend's `openapi.json` (v1.1.0, `4b81f8d`) in the admin app.
+  - Generate TypeScript types from it with one script (`bun run api:types`).
+  - Commit both, so everyone uses the same contract version.
+- **Backend:** Live · **Order:** AO-3
+- **Done when:** the types for all 35 admin operations exist and the type check passes.
 
 #### ADM-09 · One API helper ☐
 - **Build:** one function for every API call. It:
-  - adds the login token (`Authorization: Bearer …`)
-  - reads success responses `{data, meta}` and errors `{error: {code, message, fields}}`
+  - adds the 2FA login token (`Authorization: Bearer …`) from the Supabase session
+  - reads success `{data, meta}` and errors `{error: {code, message, fields}}`
   - turns error codes into clear messages:
-    - `401`: refresh the session
-    - `403 FORBIDDEN`: "you don't have permission"
+    - `401`: refresh the session, otherwise go to login
+    - `403 FORBIDDEN`: "You don't have permission"
     - `403 MFA_REQUIRED`: ask for the 2FA code, then retry
-    - `409`: show the reason
-    - `400 VALIDATION_FAILED`: show the message next to each form field
-    - `429`: "too many tries"
-  - keeps money as text, never decimal maths
-  - shows times in UTC
-  - has a **sample mode**, switched by one setting:
-    - **sample:** calls are answered by sample data shaped exactly like the contract
-    - **live:** calls go to the real API
-    - the screens never know which mode is on
-- **Backend:** API defined
-- **Done when:** unit tests cover every error code, the money and time handling, and both modes.
+    - `409 CONFLICT` and `RULE_SET_PUBLISHED`: show the backend's reason
+    - `400 VALIDATION_FAILED`: show each message next to its field
+    - `429`: "Too many tries, wait a moment"
+    - `503 SERVICE_UNAVAILABLE`: "The service is busy, try again"
+  - keeps money as text and shows times in UTC
+- **Backend:** Live · **Order:** AO-3
+- **Done when:** unit tests cover every error code, the token handling, and money and time formatting.
 
 #### ADM-10 · Tables with real paging and filters ☐
 - **Build:**
-  - The tables load page by page with the API's cursor ("Load more" or "Next").
-  - Search and filters are sent to the server.
-  - Note: the API gives no total count (see D5).
-- **Backend:** API defined (the paging format is in the contract)
-- **Done when:** a test list with more than one page works with filters.
+  - lists load page by page with the API's cursor ("Load more")
+  - search and filters are sent to the server
+  - no totals: the API doesn't give them (D5)
+- **Backend:** Live · **Order:** AO-3
+- **Done when:** a list with more than one page works with filters.
 
-### Phase 2: Login and security
-
-Phase 2 needs local Supabase running from the backend repo (Docker + `npx supabase start`), with **TOTP 2FA switched on** in `supabase/config.toml`. That is a backend change.
+### Login and security
 
 #### ADM-11 · Supabase connection ☐
-- **Build:** a Supabase client for the browser and one for the server, using only the publishable key.
-- **Backend:** Supabase
+- **Build:**
+  - Supabase clients for the browser and the server (`@supabase/ssr`), using only the publishable key
+  - the session is kept in cookies, so the server and `proxy.ts` can check it
+- **Backend:** Supabase · **Order:** AO-2
 - **Done when:** the app connects to local Supabase.
 
 #### ADM-12 · Real login (email + password) ☐
-- **Build:** replace the login preview with a real Supabase sign-in. It shows one generic error message for every failure and a lockout message.
-- **Backend:** Supabase
-- **Done when:** a real admin can sign in, and a wrong password shows the generic error.
+- **Build:**
+  - Replace the login preview with a real Supabase sign-in.
+  - One generic error message for every failure.
+  - A clear "too many attempts" message on 429.
+- **Backend:** Supabase · **Order:** AO-2
+- **Done when:** the first admin can sign in, and a wrong password shows the generic error.
 
 #### ADM-13 · 2FA setup on first login ☐
-- **Build:** a real QR code and manual key from Supabase. The admin enters a 6-digit code to confirm.
-- **Backend:** Supabase (TOTP must be on)
-- **Done when:** a new admin sets up 2FA with an authenticator app.
+- **Build:**
+  - If the admin has no verified authenticator yet, show the real QR code and manual key from Supabase (`mfa.enroll`).
+  - Ask for a 6-digit code (`mfa.challenge` + `mfa.verify`).
+  - No way to skip it.
+- **Backend:** Supabase · **Order:** AO-2
+- **Done when:** a new admin sets up 2FA with an authenticator app and lands in the panel at `aal2`.
 
-#### ADM-14 · 2FA code on later logins ☐
-- **Build:** ask for the 6-digit code after the password, reaching the 2FA login level the API needs (`aal2`). Also, when the API answers `MFA_REQUIRED`, ask for the code and retry the call.
-- **Backend:** Supabase
+#### ADM-14 · 2FA code on every login ☐
+- **Build:**
+  - After the password, ask for the 6-digit code until the session reaches `aal2`.
+  - When the API answers `MFA_REQUIRED`, ask for the code and retry the call.
+- **Backend:** Supabase · **Order:** AO-2
 - **Done when:** sign-in without the code is impossible, and the API accepts the token.
 
 #### ADM-15 · Sign out and session ☐
 - **Build:**
-  - a real user menu with the real name and sign out
+  - real user menu with the signed-in email, and a working sign out
   - the token refreshes automatically
-  - a 12-hour admin session limit
+  - a **12-hour admin session limit**, enforced by the frontend (backend gap G5)
   - a real "session expires in" timer
-- **Backend:** Supabase
-- **Done when:** sign out works and the session ends after 12 hours.
+- **Backend:** Supabase · **Order:** AO-2
+- **Done when:** sign out works, and the session ends 12 hours after sign-in.
 
 #### ADM-16 · Page protection ☐
 - **Build:**
-  - `proxy.ts` sends signed-out users to `/login`
-  - the admin layout does a real server-side check
-  - remove the sample login preview
-- **Backend:** Supabase
-- **Done when:** opening any admin page while signed out goes to `/login`.
+  - `proxy.ts` sends anyone without an `aal2` session to `/login`
+  - the admin layout checks the session again on the server
+  - remove the sample login preview and the "Explore the sample workspace" link
+- **Backend:** Supabase · **Order:** AO-2
+- **Done when:** every admin page opened while signed out, or before the 2FA code, goes to `/login`.
 
 #### ADM-17 · Backup codes ⏸
 - **Build:** backup codes for when the admin loses their phone. Only if D3 says yes; Supabase doesn't provide them.
 - **Backend:** Decision (D3)
 - **Done when:** decided and, if yes, built.
 
-#### ADM-18 · "Who am I" and permissions in the UI ⏸
+#### ADM-18 · Permissions in the UI ◐ fallback in AO-3, full version after gap G1
+- **Fallback now (AO-3):**
+  - show the signed-in email in the top bar
+  - when the API refuses (403), show "You don't have permission for this page" instead of an error
+  - admins with `admins.manage` can see their own roles (they're in the admin users list)
+- **Full version (after G1, a "who am I" endpoint):**
+  - hide menu items and buttons the admin can't use
+  - show their roles in the top bar
+- **Backend:** Gap G1 · **Order:** AO-3 (fallback)
+- **Done when:**
+  - Now: a Support admin who opens a Finance page sees the permission message.
+  - After G1: they don't see that page in the menu at all.
+
+#### ADM-19 · Fresh 2FA code before sensitive actions ☐
 - **Build:**
-  - load the signed-in admin's roles and permissions
-  - hide menu items and buttons they can't use
-  - show their real role in the top bar
-- **Backend:** Needs API (D2)
-- **Done when:** a Support admin doesn't see Finance-only buttons, and the backend still refuses if they try.
+  - Connect the existing confirm + code dialog to a real Supabase 2FA check (`mfa.challenge` + `mfa.verify`) before the action is sent.
+  - Used for: role changes, disabling or re-enabling admins, settings changes and, later, payouts and risk actions.
+- **Backend:** Supabase (the backend doesn't check yet that the code is fresh: gap G4) · **Order:** AO-7
+- **Done when:** a wrong code stops the action, and a right code lets it through.
 
-#### ADM-19 · "Confirm it's you" before risky actions ⏸
-- **Build:** connect the existing confirm + code dialog to a real re-check. This is used for payouts, risk actions and role changes.
-- **Backend:** Needs API (D2: the `POST /admin/auth/reauth` endpoint)
-- **Done when:** a wrong code stops the action.
-
-### Phase 3: Programs (API defined)
-
-The manager's plan shows the admin program builder in the **demo on Fri 6 Nov**. All steps need `programs.manage`.
-
-Program rules from the contract:
-- Program types are `INSTANT` (1 funded phase), `ONE_STEP` (1 challenge phase + funded) and `TWO_STEP` (2 challenge phases + funded).
-- Status changes allowed: Draft → Active, Active → Archived, Archived → Active, Draft → Archived. Never back to Draft. There is no delete.
-- A program can become Active only when it has:
-  - phases that match its type
-  - a published rule set on every phase
-  - at least one active account size
-  - a payout policy
-
-#### ADM-20 · Programs list ☐
-- **Build:** real list with status and type filters (`listAdminPrograms`).
-- **Done when:** programs from the API show and the filters work.
-
-#### ADM-21 · Program details page ☐
-- **Build:** one read-only page showing everything about a program (`getAdminProgram`).
-- **Done when:** every program field from the API is shown.
-
-#### ADM-22 · Create and edit a program ☐
-- **Build:**
-  - create a program (`createAdminProgram`) and edit it (`updateAdminProgram`)
-  - fields: name, slug, type, free trial, fee refund on first payout
-  - the type can change only while Draft
-- **Done when:** a program can be created and edited, and errors show next to the fields.
-
-#### ADM-23 · Program status changes ☐
-- **Build:**
-  - buttons for the allowed status changes only
-  - when the API refuses (409), show its reason
-  - an archived program allows only a status change
-- **Done when:** every allowed change works, and a blocked change shows the reason.
-
-#### ADM-24 · Phases ☐
-- **Build:**
-  - add or edit a phase: Challenge or Funded, rule set, maximum days
-  - remove a phase, only while Draft
-  - (`createAdminProgramPhase`, `updateAdminProgramPhase`, `deleteAdminProgramPhase`)
-- **Done when:** the phases can be built for all 3 program types.
-
-#### ADM-25 · Account sizes and prices ☐
-- **Build:** add a size and edit its price; switch a size off, never delete it (`createAdminAccountSize`, `updateAdminAccountSize`).
-- **Done when:** sizes and prices are saved and inactive sizes are shown as inactive.
-
-#### ADM-26 · Add-ons ☐
-- **Build:**
-  - code (can't change after creation), name, price (fixed or percent), what it changes
-  - (`createAdminAddon`, `updateAdminAddon`)
-  - Note: the list of possible add-on effects isn't decided yet.
-- **Done when:** add-ons can be created and edited.
-
-#### ADM-27 · Payout policy ☐
-- **Build:**
-  - fields: split %, minimum payout, on demand or by cycle (with cycle days), maximum per payout, maximum per cycle, maximum per trader, wallet hold hours
-  - editable only while Draft
-  - (`replaceAdminPayoutPolicy`, `deleteAdminPayoutPolicy`)
-- **Done when:** the policy is saved, and editing is blocked outside Draft.
-
-#### ADM-28 · Scaling milestones ☐
-- **Build:**
-  - trigger: number of payouts, months funded or profit % → new split % and/or size increase %
-  - editable only while Draft
-  - (`createAdminScalingMilestone`, `updateAdminScalingMilestone`, `deleteAdminScalingMilestone`)
-- **Done when:** milestones can be added, edited and removed.
-
-#### ADM-29 · Allowed pairs per program ☐
-- **Build:** choose the trading pairs for a program, with a leverage limit up to the pair's cap (`replaceAdminProgramInstruments`).
-- **Done when:** the pairs and limits are saved.
-
-### Phase 4: Rule sets (API defined)
-
-#### ADM-30 · Rule set versions list ☐
-- **Build:** all versions for one program, newest first (`listAdminRuleSets`).
-- **Permission:** `programs.manage`
-- **Done when:** the versions show with their status (Draft, Published, Retired).
-
-#### ADM-31 · Create and edit a draft ☐
-- **Build:**
-  - a new draft gets the next version number (`createAdminRuleSet`); edit it with `updateAdminRuleSet`
-  - all contract fields: profit target %, daily loss %, maximum loss %, drawdown static or trailing, minimum trading days, inactivity days, consistency %, stop-loss required within X seconds, maximum risk per trade %, maximum exposure %, minimum hold seconds, news, weekend and bots allowed, notes
-- **Permission:** `programs.manage`
-- **Done when:** a draft can be created and saved, and a published version can't be edited.
-
-#### ADM-32 · Publish a rule set ☐
-- **Build:** a confirm dialog, then publish (`publishAdminRuleSet`). If it's already published (409 `RULE_SET_PUBLISHED`), show a clear message.
-- **Permission:** `rules.publish` (Admin only)
-- **Done when:** publishing freezes the version and shows who published it and when.
-
-#### ADM-33 · Compare two versions ☐
-- **Build:** a side-by-side comparison of two versions, done in the browser (the API has no comparison endpoint).
-- **Done when:** the changed rules are clearly marked.
-
-### Phase 5: Core admin (needs API: get the contract from the backend first)
+### Sprint 1 screens
 
 #### ADM-34 · Admin users ☐
 - **Build:**
-  - list; create an admin with **several roles**; disable; **re-enable**; reset 2FA; change roles
-  - every action uses "Confirm it's you" (ADM-19)
-- **Permission:** `admins.manage`
-- **Backend:** Needs API
+  - **List:** `GET /admin/users` with search (`q`) and "Load more". Columns: name, email, roles, status, 2FA enrolled, last login.
+  - **Add admin:** find an **existing account** by email (`GET /admin/traders?q=`), pick one or more roles, then `POST /admin/users` with `profile_id` and `role_ids`.
+    - The person must have signed up first. The backend doesn't create logins or send invites (gap G3).
+  - **Change roles:** `PATCH /admin/users/{id}` with `role_ids`.
+  - **Disable:** `DELETE /admin/users/{id}`.
+  - **Re-enable:** `PATCH` with `status: ACTIVE`.
+  - **Clear messages** for the backend's refusals: your own access, or the last active admin.
+  - Every action uses the fresh 2FA check (ADM-19).
+- **Not yet:** "Reset 2FA" (gap G2) and email invitations (gap G3). Their buttons say "Not available yet".
+- **Permission:** `admins.manage` · **Backend:** Live · **Order:** AO-4
 - **Done when:** all actions work against the API and appear in the audit log.
 
 #### ADM-35 · Audit log ☐
 - **Build:**
-  - real entries with paging
-  - filters: who, action, item, date, IP
-  - detail view shows before and after values
-  - read only
-- **Permission:** `audit.read`
-- **Backend:** Needs API
-- **Done when:** entries from real admin actions show and the filters work.
+  - real entries from `GET /admin/audit-logs`, newest first, with "Load more"
+  - filters: actor, action, entity type, date range (UTC)
+  - details drawer: before and after values side by side, IP, browser (user agent), request ID
+  - read only: no edit or delete
+- **Not yet:**
+  - a server-side IP filter and actor names (gap G6). The actor shows as an ID, or as a name when the viewer can see the admin list.
+  - admin sign-ins in the log (they go to Supabase, not the API).
+- **Permission:** `audit.read` · **Backend:** Live · **Order:** AO-5
+- **Done when:** entries from real admin actions (AO-4, AO-6) show, and the filters work.
 
-#### ADM-36 · Settings: restricted countries and basic settings ☐
+#### ADM-36 · Settings ☐
 - **Build:**
-  - restricted-countries editor, starting from Bybit's 11 codes: US, CN, HK, SG, CA, KP, CU, IR, UZ, SD, SY
-  - daily reset time, snapshot interval, payout wallet hold hours, minimum age
-- **Permission:** `settings.manage`
-- **Backend:** Needs API
-- **Done when:** changes are saved and audited.
+  - all 7 settings from `GET /admin/settings`:
+    - platform name
+    - support email
+    - restricted countries
+    - daily reset time (UTC)
+    - snapshot interval (seconds)
+    - payout wallet hold (hours)
+    - minimum age
+  - save each with `PUT /admin/settings/{key}`, showing the backend's validation messages
+  - restricted-countries editor (ISO country codes). Suggested start: Bybit's 11 codes (US, CN, HK, SG, CA, KP, CU, IR, UZ, SD, SY).
+  - every save uses the fresh 2FA check (ADM-19)
+- **Permission:** `settings.manage` · **Backend:** Live · **Order:** AO-6
+- **Done when:** changes save and show in the audit log.
 
 #### ADM-37 · Settings: KYC gates ⏸
 - **Build:** choose when KYC is required, in any combination: at sign-up, before the funded account, before the first payout. The default is before the first payout. This is a client requirement.
 - **Backend:** Decision (D4); no setting exists yet
 - **Done when:** decided and built.
 
-#### ADM-38 · Instruments ☐
+#### ADM-69 · Sprint 1 demo check ☐ *(added 3 Nov)*
+- **Build:** a short written demo script, run end to end:
+  1. Open the admin app while signed out: you're sent to login.
+  2. Sign in with the password only: you can't get in.
+  3. Enter the 6-digit code: you're in.
+  4. A new admin's first login forces 2FA setup.
+  5. Add an admin with a role, then change their role.
+  6. Change a setting (e.g. restricted countries).
+  7. Open the audit log: the role change and the setting change are there, with before/after values.
+  8. Sign out.
+- **Order:** AO-7
+- **Done when:** every line passes on this computer (and on staging in AO-8).
+
+#### ADM-68 · Admin app on staging ⏸ *(added 3 Nov)*
+- **Build:** deploy the admin app with the staging settings. The staging setup needs:
+  - a staging backend with `ADMIN_URL` set to the admin app's staging address
+  - hosted Supabase with TOTP 2FA switched on
+  - the first admin created there (ADM-67's SQL)
+- **Backend:** Needs staging (manager / backend) · **Order:** AO-8
+- **Done when:** the Sprint 1 demo script (ADM-69) passes on staging.
+
+### Programs and rule sets (API live)
+
+All need `programs.manage`; publishing a rule set needs `rules.publish`.
+
+Program rules from the contract:
+- Program types are `INSTANT` (1 funded phase), `ONE_STEP` (1 challenge + funded) and `TWO_STEP` (2 challenges + funded).
+- Status changes allowed: Draft → Active, Active → Archived, Archived → Active, Draft → Archived. Never back to Draft, and there is no delete.
+- A program can become Active only with:
+  - phases that match its type
+  - a published rule set on every phase
+  - at least one active account size
+  - a payout policy
+
+#### ADM-20 · Programs list ☐
+- **Build:** live list with status and type filters (`listAdminPrograms`).
+- **Order:** AO-9
+- **Done when:** programs from the API show and the filters work.
+
+#### ADM-21 · Program details page ☐
+- **Build:** one page showing everything about a program (`getAdminProgram`).
+- **Order:** AO-9
+- **Done when:** every program field from the API is shown.
+
+#### ADM-22 · Create and edit a program ☐
 - **Build:**
-  - all pairs, including disabled ones
-  - switch on/off; leverage cap; maximum position
-  - a "Sync from Bybit" button; last sync time
-  - The launch pairs in the plan are BTC, ETH, BNB and SOL (USDT). The sample data has XRP and DOGE instead of BNB.
-- **Permission:** `instruments.manage`
-- **Backend:** Needs API
-- **Done when:** changes save and the sync shows its result.
+  - create (`createAdminProgram`) and edit (`updateAdminProgram`)
+  - fields: name, slug, type, free trial, fee refund on first payout
+  - the type can change only while Draft
+- **Order:** AO-9
+- **Done when:** a program can be created and edited, and errors show next to the fields.
 
-### Phase 6: Orders and payments (backend week 2)
-
-#### ADM-39 · Discount codes ☐
+#### ADM-23 · Program status changes ☐
 - **Build:**
-  - create a code; deactivate a code
-  - full edit: percent or fixed, value, maximum uses, per-user limit, valid from/to, programs, linked affiliate
-- **Permission:** `discounts.manage`
-- **Backend:** Needs API
-- **Done when:** codes can be created, edited and switched off.
+  - buttons for the allowed changes only
+  - when the API refuses (409), show its reason
+  - an archived program allows only a status change
+- **Order:** AO-9
+- **Done when:** every allowed change works, and a blocked change shows the reason.
 
-#### ADM-40 · Orders and payments ☐
+#### ADM-24 · Phases ☐
 - **Build:**
-  - orders list and detail; payments list
-  - real statuses; payment method (gateway or direct transfer)
-  - deposit address, transaction hash, confirmations
-- **Permission:** `orders.read`
-- **Backend:** Needs API
-- **Done when:** real orders show with their payments.
+  - add or edit a phase: Challenge or Funded, rule set, maximum days
+  - remove only while Draft
+  - (`createAdminProgramPhase`, `updateAdminProgramPhase`, `deleteAdminProgramPhase`)
+- **Order:** AO-11
+- **Done when:** the phases can be built for all 3 program types.
 
-#### ADM-41 · Payment events and reconciliation ☐
-- **Build:** the log of payment-provider messages (webhooks) and a report that checks payments against orders.
-- **Permission:** `orders.read`
-- **Backend:** Needs API
-- **Done when:** the log and the report show real data.
+#### ADM-25 · Account sizes and prices ☐
+- **Build:** add a size, edit its price, switch a size off; never delete (`createAdminAccountSize`, `updateAdminAccountSize`).
+- **Order:** AO-11
+- **Done when:** sizes and prices save, and inactive sizes show as inactive.
 
-#### ADM-42 · Refunds ☐
+#### ADM-26 · Add-ons ☐
 - **Build:**
-  - refund **from an order**: amount, coin, network, wallet, transaction hash, reason
-  - uses "Confirm it's you"
-  - this replaces the current refund-queue design
-- **Permission:** `refunds.create`
-- **Backend:** Needs API
-- **Done when:** a refund is recorded and shows on the order.
+  - code (fixed after creation), name, price (fixed or percent), what it changes
+  - (`createAdminAddon`, `updateAdminAddon`)
+  - the list of possible add-on effects isn't decided yet
+- **Order:** AO-11
+- **Done when:** add-ons can be created and edited.
 
-#### ADM-43 · Invoices and ledger ☐
-- **Build:** download PDF invoices and receipts, and a ledger view.
-- **Permission:** `orders.read`
-- **Backend:** Needs API
-- **Done when:** an invoice downloads and the ledger shows entries.
+#### ADM-27 · Payout policy ☐
+- **Build:**
+  - split %, minimum payout, on demand or by cycle (with cycle days), maximum per payout, maximum per cycle, maximum per trader, wallet hold hours
+  - Draft only
+  - (`replaceAdminPayoutPolicy`, `deleteAdminPayoutPolicy`)
+- **Order:** AO-11
+- **Done when:** the policy saves, and editing is blocked outside Draft.
 
-### Phase 7: Trading operations (backend week 3)
+#### ADM-28 · Scaling milestones ☐
+- **Build:**
+  - trigger: number of payouts, months funded or profit %. Effect: new split % and/or size increase %.
+  - Draft only
+  - (`createAdminScalingMilestone`, `updateAdminScalingMilestone`, `deleteAdminScalingMilestone`)
+- **Order:** AO-11
+- **Done when:** milestones can be added, edited and removed.
 
-#### ADM-44 · Traders list and Trader 360 (real data) ☐
-- **Build:** real traders list with search and filters, and the Trader 360 page with its tabs: accounts, orders, KYC, payouts, devices and IPs, flags.
-- **Permission:** `traders.read`
-- **Backend:** Needs API
-- **Done when:** real traders show with all tabs.
+#### ADM-29 · Allowed pairs per program ☐
+- **Build:** choose the trading pairs, with a leverage limit up to the pair's cap (`replaceAdminProgramInstruments`).
+- **Order:** AO-11
+- **Done when:** the pairs and limits save.
+
+#### ADM-30 · Rule set versions list ☐
+- **Build:** all versions for one program, newest first (`listAdminRuleSets`).
+- **Order:** AO-10
+- **Done when:** versions show with their status (Draft, Published, Retired).
+
+#### ADM-31 · Create and edit a draft ☐
+- **Build:**
+  - a new draft gets the next version number (`createAdminRuleSet`); edit it with `updateAdminRuleSet`
+  - all contract fields:
+    - profit target %, daily loss %, maximum loss %, drawdown static or trailing
+    - minimum trading days, inactivity days, consistency %
+    - stop-loss required within X seconds, maximum risk per trade %, maximum exposure %, minimum hold seconds
+    - news, weekend and bots allowed
+    - notes
+- **Order:** AO-10
+- **Done when:** a draft can be created and saved, and a published version can't be edited.
+
+#### ADM-32 · Publish a rule set ☐
+- **Build:** a confirm dialog, then `publishAdminRuleSet`. An already-published set (409 `RULE_SET_PUBLISHED`) shows a clear message.
+- **Permission:** `rules.publish` (Admin only) · **Order:** AO-10
+- **Done when:** publishing freezes the version and shows who published it and when.
+
+#### ADM-33 · Compare two versions ☐
+- **Build:** a side-by-side comparison done in the browser (the API has no comparison endpoint).
+- **Order:** AO-10
+- **Done when:** the changed rules are clearly marked.
+
+### Traders (API live for the basics)
+
+#### ADM-44 · Traders list and Trader 360 ☐
+- **Build:**
+  - **Now (live):** traders list with search (`q`) and status filter, and the trader detail (name, email, country, status, KYC status, last login).
+  - **Later (needs API):** the other Trader 360 tabs: accounts, orders, payouts, devices and IPs, flags.
+- **Permission:** `traders.read` · **Backend:** Live (list and detail) / Needs API (tabs) · **Order:** AO-12
+- **Done when:** real traders show with their details.
 
 #### ADM-45 · Trader actions ☐
-- **Build:** edit, lock, suspend and close a trader, each with a reason.
-- **Permission:** `traders.update`
-- **Backend:** Needs API
-- **Done when:** the actions work and are audited.
+- **Build:** edit first and last name; change status (Active, Locked, Suspended, Closed), each with a confirm step (`PATCH /admin/traders/{id}`).
+- **Permission:** `traders.update` · **Backend:** Live · **Order:** AO-12
+- **Done when:** the changes save and appear in the audit log.
 
 #### ADM-46 · Trader 360 extras ☐
 - **Build:**
@@ -468,127 +731,41 @@ Program rules from the contract:
   - accepted agreements
   - who referred them
   - account details: positions, trades, daily stats
-- **Permission:** `traders.read`
-- **Backend:** Needs API
-- **Done when:** each extra shows real data.
+- **Permission:** `traders.read` · **Backend:** Needs API · **Order:** AO-14+
 
-#### ADM-47 · KYC queue and review ☐
-- **Build:**
-  - queue; secure document viewer
-  - reviewer checklist
-  - Tier 1 / Tier 2
-  - duplicate-ID warning only when it's true
-  - approve, reject with a reason, or ask to resubmit
-- **Permission:** `kyc.review`
-- **Backend:** Needs API
-- **Done when:** a real application can be reviewed end to end.
+### Waiting for backend APIs (AO-14 and later)
 
-#### ADM-48 · Pass reviews ☐
-- **Build:** real metrics, automatic vs manual pass, approve or reject with a note.
-- **Permission:** `risk.review`
-- **Backend:** Needs API
-- **Done when:** a real pass review can be decided.
+These stay as labelled previews until the backend defines their API. Each becomes its own build order then.
 
-#### ADM-49 · Live updates (WebSocket) ☐
-- **Build:** one connection for live admin data: violations, connections, payout queue.
-- **Backend:** Needs API (WebSocket `/ws`)
-- **Done when:** a new violation appears without reloading the page.
+| Step | What | Permission | Planned backend week |
+|---|---|---|---|
+| ADM-38 | Instruments: on/off, leverage cap, max position, sync from Bybit | `instruments.manage` | Week 1–2 |
+| ADM-39 | Discount codes: create, edit, deactivate | `discounts.manage` | Week 2 |
+| ADM-40 | Orders and payments: list, detail, status, method, tx hash | `orders.read` | Week 2 |
+| ADM-41 | Payment events (webhooks) and reconciliation | `orders.read` | Week 2 |
+| ADM-42 | Refunds from an order (replaces today's refund queue) | `refunds.create` | Week 2 |
+| ADM-43 | Invoices (PDF) and ledger | `orders.read` | Week 2 |
+| ADM-47 | KYC queue and review: documents, checklist, approve / reject / resubmit | `kyc.review` | Week 3 |
+| ADM-48 | Pass reviews: metrics, approve or reject with a note | `risk.review` | Week 3 |
+| ADM-49 | Live updates over WebSocket: violations, connections, payout queue | — | Week 3 |
+| ADM-50 | Risk monitor with live usage bars | (D1) | Week 3 |
+| ADM-51 | Violations and account actions, including "close positions" | `risk.action` | Week 3 |
+| ADM-52 | Connection health: stream status, delay, key expiry | (D1) | Week 3 |
+| ADM-53 | Abuse review: flag types and outcomes ("Should", not "Must") | `risk.review` | Week 3 |
+| ADM-54 | Payout approvals: every payout approved by a person | `payouts.approve` | Week 4 |
+| ADM-55 | Sending payouts, transactions and history | `payouts.send` | Week 4 |
+| ADM-56 | Affiliates, commission plans and commissions (1 level) | `affiliates.manage` | Week 4 |
+| ADM-57 | Notification templates (new screen) | `notifications.manage` | Week 4 |
+| ADM-58 | Liability totals and alerts | (D1) | Week 4 |
+| ADM-59 | Dashboard with real numbers | (D1) | After the above |
+| ADM-60 | Reports and exports (CSV / XLSX) with download | (D1) | After the above |
+| ADM-61 | Legal document versions | Decision (D6) | Before launch |
 
-#### ADM-50 · Risk monitor (live) ☐
-- **Build:** live usage bars per account (daily loss, maximum loss, profit target).
-- **Backend:** Needs API
-- **Done when:** the bars move with real account data.
-
-#### ADM-51 · Violations and account actions ☐
-- **Build:**
-  - violations list and detail: hard or soft, measured vs limit, resolved time
-  - account actions: warn, fail, suspend, unsuspend, profit adjust, **close positions**
-  - each action needs a reason and "Confirm it's you"
-- **Permission:** `risk.action`
-- **Backend:** Needs API
-- **Done when:** an action works and the trader's account changes.
-
-#### ADM-52 · Connection health ☐
-- **Build:**
-  - per account: stream status (connected, reconnecting, down), delay, last event, last check
-  - connection details: masked key (never the secret), key-expiry warnings
-- **Backend:** Needs API
-- **Done when:** real connection data shows. Today it wrongly shows risk data.
-
-#### ADM-53 · Abuse review ☐
-- **Build:**
-  - real flag types
-  - outcomes from the spec: warn, remove profit, lower split, close, dismiss
-  - lower priority: the plan marks this "Should", not "Must"
-- **Permission:** `risk.review`
-- **Backend:** Needs API
-- **Done when:** a real flag can be resolved.
-
-### Phase 8: Money out (backend week 4)
-
-#### ADM-54 · Payout approvals ☐
-- **Build:**
-  - queue of profit and affiliate payout requests
-  - eligibility checks and split
-  - approve, or reject with a reason
-  - uses "Confirm it's you"
-  - every payout is approved by a person; nothing is paid automatically
-- **Permission:** `payouts.approve`
-- **Backend:** Needs API
-- **Done when:** a real request can be approved or rejected.
-
-#### ADM-55 · Sending payouts and history ☐
-- **Build:**
-  - send approved payouts
-  - payout transactions (provider, network fee, transaction hash)
-  - full history
-  - payout wallets
-- **Permission:** `payouts.send`
-- **Backend:** Needs API
-- **Done when:** a sent payout shows its transaction.
-
-#### ADM-56 · Affiliates ☐
-- **Build:**
-  - affiliates list and edit: status, plan, upline, balances
-  - commission plans; commissions list
-  - 1 level only for now
-- **Permission:** `affiliates.manage`
-- **Backend:** Needs API
-- **Done when:** affiliates and commissions show real data.
-
-#### ADM-57 · Notification templates (new screen) ☐
-- **Build:** edit the email and in-app message text for each event (sign-up, KYC, payment, pass/fail, payout, …).
-- **Permission:** `notifications.manage`
-- **Backend:** Needs API
-- **Done when:** a template can be edited and saved.
-
-#### ADM-58 · Liability ☐
-- **Build:** real totals for pending and expected payouts against revenue, with alerts.
-- **Backend:** Needs API
-- **Done when:** the real numbers show.
-
-### Phase 9: Dashboard and reports
-
-#### ADM-59 · Dashboard (real numbers) ☐
-- **Build:** real KPIs: sales, active accounts, pass rate, payouts, liability, funded traders, payout ratio, affiliate cost.
-- **Backend:** Needs API
-- **Done when:** the numbers match the data.
-
-#### ADM-60 · Reports and exports ☐
-- **Build:** start an export job (CSV or XLSX), see its status, and download the file.
-- **Backend:** Needs API
-- **Done when:** a real file downloads.
-
-#### ADM-61 · Legal document versions ⏸
-- **Build:** publish new versions of the Terms, Privacy, Risk Disclosure and Trader Agreement.
-- **Backend:** Decision (D6)
-- **Done when:** decided and built.
-
-### Phase 10: Finish
+### Finish (AO-last)
 
 #### ADM-62 · Security headers ☐
 - **Build:** security headers and a Content Security Policy for the admin app.
-- **Done when:** the headers are present on every page.
+- **Done when:** the headers are on every page.
 
 #### ADM-63 · Test IDs check ☐
 - **Build:** a final check that every button and form field has a `data-testid`.
@@ -600,7 +777,7 @@ Program rules from the contract:
   - the "Sample data" tag
   - the `?state=` preview switch
   - any leftover preview code
-- **Done when:** no fake data remains anywhere in the app.
+- **Done when:** no fake data remains anywhere.
 
 #### ADM-65 · Phone and accessibility pass ☐
 - **Build:** check every screen on phone and desktop, keyboard use, labels and contrast.
@@ -616,39 +793,59 @@ Competitions, certificates and news blackout windows. The manager's plan moved t
 
 ---
 
-## 5. Open questions (ask the manager)
+## 6. Backend gaps (send to the backend engineer)
+
+The admin API on backend `dev` covers most of Sprint 1. These pieces are missing; the panel works around each until it's added.
+
+| ID | Missing on the backend | Sprint task | What the panel does until then |
+|---|---|---|---|
+| **G1** | A "who am I" endpoint for admins (e.g. `GET /admin/me`: my member record, roles, permissions) | AD1-07 | Shows the email; explains 403s; can't hide what you can't use (ADM-18) |
+| **G2** | Reset another admin's 2FA (needs the Supabase admin API on the server) | AD1-03 | "Reset 2FA" shows "Not available yet" |
+| **G3** | Invite or create an admin login by email; today `POST /users` only grants access to an existing account | AD1-03 | "Add admin" picks an account that already signed up |
+| **G4** | Check that a fresh 2FA code was entered before sensitive actions (role changes, disabling admins, settings, payouts, risk actions) | AD1-07 | Asks for a real fresh code in the browser (ADM-19); the API doesn't check it |
+| **G5** | Enforce the 12-hour admin session | AD1-07 | The browser signs the admin out after 12 hours (ADM-15) |
+| **G6** | Audit log: an IP filter, and the actor's name or email in each entry | AD1-05 | Filters IP on loaded rows only; shows the actor ID |
+| **G7** | First admin on staging: there is no script, only manual SQL | Sprint 1 | ADM-67's SQL, run by the backend engineer on staging |
+| **G8** | Staging: deployed backend + hosted Supabase (2FA on) + `ADMIN_URL` set to the staging admin address | Sprint 1 acceptance | Demo only on this computer until it exists (AO-8 ⏸) |
+| **G9** | Admin password strength: local Supabase allows 6 characters with no rules | Security | Nothing in the panel; set a strong policy in hosted Supabase |
+
+---
+
+## 7. Open questions (ask the manager)
 
 | ID | Question | Blocks |
 |---|---|---|
-| D1 | **Permissions conflict.** The Tech Spec and the backend seed disagree. For example, the spec lets Admin + Risk publish rule sets, but the seed allows Admin only. The risk monitor, violations, connection health, KPIs, reports and liability have **no permission** in the seed. Which is right? | ADM-18, Phases 7–9 |
-| D2 | **Missing endpoints.** The backend needs a "who am I" endpoint (roles and permissions) and the "confirm it's you" endpoint (`POST /admin/auth/reauth`). | ADM-18, ADM-19 |
+| D1 | **Permissions.** The backend now enforces the seed's 18 permissions. The Tech Spec disagrees in places (e.g. Admin + Risk publishing rule sets). Viewing the risk monitor, connection health, KPIs, reports and liability has **no permission** in the seed. Which is right? | ADM-50, ADM-52, ADM-58 – ADM-60 |
+| D2 | **Endpoints for identity and re-auth.** Same as gaps G1 and G4: who builds them, and when? | ADM-18 (full), ADM-19 (backend check) |
 | D3 | **Backup codes.** Do admins get backup codes? Supabase doesn't provide them. | ADM-17 |
-| D4 | **Client settings.** KYC gates, consistency rule settings (on/off, where it applies) and the reset timezone are client requirements with no backend support. | ADM-37, ADM-31 |
-| D5 | **Table totals.** Tables can't show total counts (the API's paging has none). Is that OK for admin tables? | ADM-10 |
-| D6 | **Legal versions.** How are new versions published: an admin screen, or a database migration? | ADM-61 |
+| D4 | **Client settings.** KYC gates, consistency rule settings and the reset timezone are client requirements with no backend support. | ADM-37, ADM-31 |
+| D5 | **Table totals.** Tables can't show total counts (the API's paging has none). Is that OK? | ADM-10 |
+| D6 | **Legal versions.** Admin screen, or a database migration per version? | ADM-61 |
+| D7 | **Staging for the 4 Nov demo.** Where are the backend, hosted Supabase and admin app hosted, and who deploys them? | AO-8 |
 
 ---
 
-## 6. Sources
+## 8. Sources
 
-Where the facts in this plan come from:
-
-| Topic | File |
+| Topic | Where |
 |---|---|
+| Sprint 1 promise and client check | Payment plan, Instalment 1 (Sprint 1, demo Wed 4 Nov) |
+| Sprint 1 admin tasks | Sprint 1 detailed plan, section 9.2 (AD1-01 – AD1-07) |
+| Backend admin API | Backend repo, `dev` at `4b81f8d`: `docs/ADMIN_API.md`, `openapi.json` v1.1.0, `src/contracts/admin-foundation.ts` |
+| Permissions and roles | Backend `supabase/seed.sql`, `src/contracts/permissions.ts` |
+| Admin tables (first-admin SQL) | Backend `supabase/migrations/20261031000100_p1_foundation.sql` |
 | Current admin app | `apps/admin/src`, `docs/admin-preview.md`, `apps/admin/VISUAL_AUDIT.md` |
-| UI rules | `docs/ADMIN_UI_RULES.md`, `DESIGN.md` |
-| Backend API contract | `Funded_Hub_backend/openapi.json`, `src/contracts/` (`admin-programs.ts`, `admin-rule-sets.ts`, `permissions.ts`) |
-| Permissions and roles | `Funded_Hub_backend/supabase/seed.sql` |
-| Database tables | `Funded_Hub_backend/supabase/migrations/` |
-| Scope and schedule | The project planning documents: the manager's v2 backend guide and decisions (31 Oct 2026) and the week 1 plan |
+| UI rules and palette | `docs/ADMIN_UI_RULES.md`, `DESIGN.md` |
+| Scope and schedule | The manager's v2 backend guide and decisions (31 Oct 2026) and the week 1 plan |
 | Client decisions | The project's client answers log |
-| Older plans (superseded where they conflict) | `SPRINT_1_DETAILED_PLAN.md`, `BUILD_SPRINT_PLAN.md`, the Tech Spec PDF |
 
 ---
 
-## 7. Change log
+## 9. Change log
 
 | Date | Step | Note |
 |---|---|---|
 | 2 Nov 2026 | – | Plan created. Earlier the same day: `apps/admin` added to the workspaces (`package.json`, `bun.lock`), so the admin app installs and runs. |
-| 2 Nov 2026 | – | Added "What we can build before the backend is finished" (section 2) and sample mode to ADM-09, because the backend isn't finished yet. |
+| 2 Nov 2026 | – | Added "What we can build before the backend is finished" and a sample mode for ADM-09, because the backend wasn't finished. |
+| 2 Nov 2026 | – | Colours only (not a numbered step): new readable admin palette in packages/ui (dark neutral layers, web-theme accents), at the user's request. See DESIGN.md › Admin palette. |
+| 3 Nov 2026 | – | **Rebuilt as build orders (AO-1 …).** Reasons: the backend's `dev` branch now has a live admin API (35 routes, contract v1.1.0, `4b81f8d`), and Sprint 1 promises "admin panel with mandatory 2FA, roles and audit log" for the Wed 4 Nov demo. Changes: Sprint 1 orders come first; programs, rule sets and trader basics moved from "API defined" to "Live"; the sample mode in ADM-09 was dropped (the screens it served now have a live API); ADM-34 – ADM-36 rewritten to the real API; added ADM-67 (local backend + first admin), ADM-68 (staging) and ADM-69 (Sprint 1 demo check); added backend gaps G1–G9 and question D7. |
