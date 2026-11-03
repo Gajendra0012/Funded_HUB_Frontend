@@ -1,4 +1,3 @@
-import { countryOptions } from "./legacy";
 import { SAMPLE_NOW, sampleAt } from "./now";
 import type { OpsRecord, ScreenData, WorkspaceMocks } from "./types";
 
@@ -23,7 +22,6 @@ export const workspace:WorkspaceMocks={
  },
  riskLimits:{daily:5,maximum:10,profit:8},discountCap:500,liabilityAllocation:"$24,650",
  now:SAMPLE_NOW,
- countries:[...countryOptions,{code:"AU",name:"Australia"},{code:"DE",name:"Germany"},{code:"FR",name:"France"},{code:"JP",name:"Japan"}],restrictedCountries:["US","CA"],updatedBy:"Alex Morgan",updatedAt:sampleAt(3600),
  screens:{
  "risk-monitor":screen("Risk monitor","Trading","Account limits and stream activity at the shared UTC snapshot.",risk,[{label:"Monitored",value:"1,284"},{label:"Near limit",value:"18"},{label:"Breached",value:"4"},{label:"Delayed streams",value:"3"}],[{key:"id",label:"Account",mono:true},{key:"name",label:"Trader"},{key:"status",label:"Risk state"},{key:"detail",label:"Daily usage"},{key:"at",label:"Last event · UTC",mono:true}]),
  violations:screen("Violations","Trading","Investigate rule events before taking an account action.",[record("VIO-1048","Jamie Chen","Breached","loss","Daily loss · hard rule"),record("VIO-1047","Taylor Brooks","Warning","caution","Consistency · soft rule"),record("VIO-1046","Riley Singh","Resolved","neutral","Daily loss · reviewed")],[{label:"Open events",value:"24"},{label:"Hard breaches",value:"4"},{label:"Soft warnings",value:"20"}], [{key:"id",label:"Event ID",mono:true},{key:"name",label:"Trader"},{key:"detail",label:"Rule"},{key:"status",label:"State"},{key:"at",label:"Event time · UTC",mono:true}]),

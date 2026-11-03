@@ -3,7 +3,6 @@ import {
   filterByStatus,
   lastLoginText,
   memberActionMessage,
-  outcomeUnknown,
   personLabel,
   personName,
   roleNames,
@@ -11,7 +10,7 @@ import {
   sortMembers,
   type StaffMember,
 } from "../src/lib/admin-users";
-import { API_MESSAGES, apiError, parseErrorBody } from "../src/lib/api/errors";
+import { API_MESSAGES, apiError, outcomeUnknown, parseErrorBody } from "../src/lib/api/errors";
 import { isLivePath } from "../src/lib/live-pages";
 import type { StaffRole } from "../src/lib/roles";
 
@@ -114,8 +113,8 @@ describe("admin users: refusals and failures (ADM-34)", () => {
 });
 
 describe("live pages", () => {
-  it("labels the connected pages as live (AO-4 roles and admin users, AO-5 audit log); the rest stay sample", () => {
-    for (const path of ["/roles", "/admin-users", "/users", "/audit-log", "/audit"]) expect(isLivePath(path), path).toBe(true);
-    for (const path of ["/", "/traders", "/settings", "/roles/extra"]) expect(isLivePath(path), path).toBe(false);
+  it("labels the connected pages as live (AO-4 roles and admin users, AO-5 audit log, AO-6 settings); the rest stay sample", () => {
+    for (const path of ["/roles", "/admin-users", "/users", "/audit-log", "/audit", "/settings"]) expect(isLivePath(path), path).toBe(true);
+    for (const path of ["/", "/traders", "/programs", "/roles/extra"]) expect(isLivePath(path), path).toBe(false);
   });
 });

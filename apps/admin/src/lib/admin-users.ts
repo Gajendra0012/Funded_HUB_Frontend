@@ -2,7 +2,7 @@
  * Admin users (ADM-34): the rules behind the screen, kept apart from it so they can be tested.
  * The backend decides everything; these only shape what the screen shows and says.
  */
-import type { ApiError } from "./api/errors";
+import { outcomeUnknown, type ApiError } from "./api/errors";
 import { formatUtc } from "./api/format";
 import type { Schemas } from "./api/types";
 import { sortRoles } from "./roles";
@@ -68,11 +68,6 @@ export function lastLoginText(member: StaffMember): string {
 }
 
 export type MemberAction = "add" | "roles" | "disable" | "enable";
-
-/** No answer came back, so a write may or may not have been saved: the list is loaded again to show which. */
-export function outcomeUnknown(error: ApiError): boolean {
-  return error.code === "NETWORK_ERROR" || error.code === "TIMEOUT" || error.code === "INVALID_RESPONSE";
-}
 
 /** What a dialog says when its action fails. */
 export function memberActionMessage(action: MemberAction, error: ApiError): string {

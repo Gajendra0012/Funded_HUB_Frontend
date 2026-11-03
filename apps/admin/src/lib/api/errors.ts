@@ -98,6 +98,11 @@ export function parseErrorBody(status: number, body: unknown): ApiError {
   return apiError(known, status, typeof message === "string" ? message : undefined, known === "VALIDATION_FAILED" && isStringRecord(fields) ? fields : undefined);
 }
 
+/** No readable answer came back, so a change may or may not have been saved: show the list again before retrying. */
+export function outcomeUnknown(error: ApiError): boolean {
+  return error.code === "NETWORK_ERROR" || error.code === "TIMEOUT" || error.code === "INVALID_RESPONSE";
+}
+
 /** Errors worth a "Try again" button: the same request may work a moment later. */
 export function isRetryable(error: ApiError): boolean {
   return ["NETWORK_ERROR", "TIMEOUT", "INVALID_RESPONSE", "TOO_MANY_REQUESTS", "INTERNAL_ERROR", "SERVICE_UNAVAILABLE", "HTTP_ERROR"].includes(error.code);

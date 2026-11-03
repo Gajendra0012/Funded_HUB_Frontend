@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, type FormEvent, type ReactNode } from "react";
-import { Modal } from "@funded-hub/ui";
 import {
   ACCOUNT_SEARCH_LIMIT,
   MAX_ROLES,
   memberActionMessage,
-  outcomeUnknown,
   personLabel,
   personName,
   roleIdsOf,
@@ -15,11 +13,12 @@ import {
   type AccountRecord,
   type StaffMember,
 } from "@/lib/admin-users";
-import type { ApiError } from "@/lib/api/errors";
+import { outcomeUnknown, type ApiError } from "@/lib/api/errors";
 import { cleanQuery, queryKey, SEARCH_MAX_LENGTH } from "@/lib/api/paging";
 import type { ApiResult, PageMeta } from "@/lib/api/types";
 import { useCursorList, useDebouncedValue } from "@/lib/api/use-cursor-list";
 import type { StaffRole } from "@/lib/roles";
+import { ActionDialog, FormError } from "./action-dialog";
 import { useAdminApi } from "./admin-api-provider";
 
 /** The roles the pickers offer, from `GET /admin/roles`. */
@@ -34,31 +33,6 @@ type DialogHandlers = {
   /** No answer came back: the screen loads the list again to show what was saved. */
   onUncertain: () => void;
 };
-
-/**
- * The frame of every action dialog.
- * - It stays mounted and is only opened and closed: the shared Modal closes itself when it mounts
- *   already open in React's development double-run (ADM-03).
- * - The form inside gets a new `formKey` on each opening, so it starts clean, and stays on screen
- *   while the dialog closes.
- * - It can't be closed while its request runs.
- */
-function ActionDialog({ open, title, busy, onClose, children }: { open: boolean; title: string; busy: boolean; onClose: () => void; children: ReactNode }) {
-  return (
-    <Modal open={open} title={title} onClose={() => (busy ? undefined : onClose())}>
-      {children}
-    </Modal>
-  );
-}
-
-function FormError({ message, testId }: { message: string; testId: string }) {
-  if (!message) return null;
-  return (
-    <p className="inline-alert" role="alert" data-testid={testId}>
-      {message}
-    </p>
-  );
-}
 
 /** Role checkboxes: at least one, at most 4 (the contract's limits). */
 function RolePicker({ options, value, onChange, disabled, testId }: { options: RoleOptions; value: string[]; onChange: (ids: string[]) => void; disabled: boolean; testId: string }) {

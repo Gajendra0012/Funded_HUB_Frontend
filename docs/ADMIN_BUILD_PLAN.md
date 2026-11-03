@@ -3,8 +3,8 @@
 **Goal:** build the Funded HUB admin app (`apps/admin`) completely and correctly. We work **one build order at a time**, starting with what Sprint 1 needs.
 
 - Created: 2 Nov 2026
-- Last updated: 3 Nov 2026 (AO-5 done: live audit log)
-- Progress: **16 of 70 steps done** (AO-1 ☑, AO-2 ☑, AO-3 ☑, AO-4 ☑, AO-5 ☑; ADM-18 ◐) · next: **AO-6** (settings). **ADM-70** (Next.js security fix) is still open: recommended soon, required before staging (AO-8).
+- Last updated: 3 Nov 2026 (AO-6 done: live settings)
+- Progress: **17 of 70 steps done** (AO-1 ☑ – AO-6 ☑; ADM-18 ◐) · next: **AO-7** (fresh 2FA code before sensitive actions, UI fixes, the Sprint 1 demo check). **ADM-70** (Next.js security fix) is still open: recommended soon, required before staging (AO-8).
 
 ---
 
@@ -27,17 +27,17 @@ The client checks it like this before paying, on **staging**:
 | AD1-03 | Admin users: list, add, disable, reset 2FA, roles | ☑ Live (AO-4, 3 Nov): list and search, add an existing account, change roles, disable, re-enable; "Reset 2FA" says "Not available yet" | ✅ List, add (existing account), change roles, disable/enable · ❌ reset 2FA · ❌ email invites | Nothing locally; fresh 2FA code before each change (AO-7) | AO-4 ☑ |
 | AD1-04 | Roles and permissions view | ☑ Live matrix (AO-4, 3 Nov): 4 roles × 18 permissions | ✅ `GET /admin/roles` (4 roles, 18 permissions) | Nothing | AO-4 ☑ |
 | AD1-05 | Audit log viewer | ☑ Live (AO-5, 3 Nov): newest first, filters, Load more, details with before and after | ✅ `GET /admin/audit-logs` with filters · ❌ IP filter · ❌ actor names | Nothing locally (IP filter and names: G6) | AO-5 ☑ |
-| AD1-06 | System settings | Preview (restricted countries only) | ✅ 7 settings, each saved with an audit record | Connect the screen to the API | AO-6 |
+| AD1-06 | System settings | ☑ Live (AO-6, 3 Nov): all 7, each reviewed and saved on its own, with what uses it | ✅ 7 settings, each saved with an audit record | Fresh 2FA code before saving (AO-7) | AO-6 ☑ |
 | AD1-07 | Page protection, permission checks, 12-hour session, 2FA again for sensitive actions | ◐ Page protection and the 12-hour session (AO-2), permission handling, fallback version (AO-3) | ✅ Permission check on every call · ❌ "who am I" · ❌ re-auth check · ❌ 12-hour limit | Step-up 2FA; hiding by permission after G1 | AO-7 |
 | — | Live on **staging** | Not deployed | Not deployed | Deploy admin app and backend, create the first admin there | AO-8 |
 
 ✅ = built and tested on backend `dev` · ❌ = missing on the backend (see section 6, "Backend gaps")
 
 **Short answer: what's left for Sprint 1.**
-- **Done (AO-1 – AO-5):** local stack, real login with mandatory 2FA, page protection, 12-hour session, one API helper with paging, error pages, the admin access check, live roles and admin users, and the live audit log that shows each of their changes.
-- **Frontend work left (AO-6 and AO-7):**
-  - live settings
+- **Done (AO-1 – AO-6):** local stack, real login with mandatory 2FA, page protection, 12-hour session, one API helper with paging, error pages, the admin access check, live roles, admin users and settings, and the live audit log that shows each of their changes.
+- **Frontend work left (AO-7):**
   - a fresh 2FA check before sensitive actions
+  - UI fixes and the Sprint 1 demo check
 - **Deployment to staging (AO-8):** needs a staging backend and hosted Supabase. Those are not confirmed yet; ask the manager.
 - **Backend gaps:** a few small ones (section 6). The panel works around each, but the backend should close them.
 
@@ -49,7 +49,7 @@ The rough estimate for AO-1 to AO-7 is **10–12 hours of focused work**. That's
 - **If time runs out, keep these first:**
   - AO-2 (login + 2FA) ☑
   - AO-5 (audit log) ☑
-  - one action that writes to the audit log (role change in AO-4 ☑, or a setting in AO-6)
+  - one action that writes to the audit log (role change in AO-4 ☑, or a setting in AO-6 ☑)
 
   Together these prove the client's check: "admin login requires 2FA; actions appear in the audit log".
 
@@ -93,7 +93,7 @@ Not part of this plan: the Sprint 1 line "Staging site: registration, email veri
 | **AO-3** | One API helper, paging, error and permission handling | ADM-08, ADM-09, ADM-10, ADM-06, ADM-18 | Sprint 1 | 2 h | ☑ 3 Nov |
 | **AO-4** | Roles matrix and admin users, live | ADM-05, ADM-34 | Sprint 1 | 2 h | ☑ 3 Nov |
 | **AO-5** | Audit log, live | ADM-35 | Sprint 1 | 1 h | ☑ 3 Nov |
-| **AO-6** | Settings, live | ADM-36 | Sprint 1 | 1 h | ☐ |
+| **AO-6** | Settings, live | ADM-36 | Sprint 1 | 1 h | ☑ 3 Nov |
 | **AO-7** | Fresh 2FA before sensitive actions, bug fixes, Sprint 1 demo check | ADM-19, ADM-03, ADM-69 | Sprint 1 | 1.5 h | ☐ |
 | **AO-8** | Admin app on staging | ADM-68 | Sprint 1 (client acceptance) | 1 h + infra | ⏸ needs staging infra |
 | **AO-9** | Programs: list, details, create, edit, status | ADM-20, ADM-21, ADM-22, ADM-23 | Manager demo Fri 6 Nov | 2.5 h | ☐ |
@@ -187,6 +187,7 @@ Not part of this plan: the Sprint 1 line "Staging site: registration, email veri
   - the restricted-countries editor works
   - every save shows up in the audit log
 - **Not in this order:** KYC gates (ADM-37, D4).
+- **Done 3 Nov:** all of the above, against the local backend. Found: G16 (country list) and G17 (5 settings nothing reads yet).
 
 #### AO-7 · Sensitive actions and the Sprint 1 check
 - **Steps:**
@@ -270,11 +271,11 @@ A step is ☑ only when all of these are true:
 
 - **Real login (AO-2, 3 Nov):** Supabase password + mandatory 2FA, page protection, sign out and the 12-hour session.
 - **Talking to the backend (AO-3, 3 Nov):** one API helper (`src/lib/api`) with the 2FA token, typed from the contract; cursor paging; error, loading and not-found pages; the admin access check on every page load. Lint blocks direct `fetch` calls in admin code.
-- **Live screens (3 Nov):** Roles (the live matrix) and Admin users (list, search, add, change roles, disable, re-enable) in AO-4; the Audit log in AO-5. The top bar says "Live data" on these pages and "Sample data" on the others.
+- **Live screens (3 Nov):** Roles (the live matrix) and Admin users (list, search, add, change roles, disable, re-enable) in AO-4; the Audit log in AO-5; Settings in AO-6. The top bar says "Live data" on these pages and "Sample data" on the others.
 - **The other screens are still a preview.**
-  - 19 screens on sample data (`apps/admin/src/mocks`).
+  - 18 screens on sample data (`apps/admin/src/mocks`).
   - Every button only shows a "Sample… previewed" message.
-  - They move to the API helper one by one (AO-6 onwards).
+  - They move to the API helper one by one (AO-9 onwards: programs and rule sets).
 - **New readable colour palette** (2 Nov), in `packages/ui`, committed 3 Nov (`24661b6`).
 - **The app installs and runs** (workspace fix of 2 Nov) on the frontend `dev` branch.
 
@@ -335,7 +336,7 @@ Programs and rule sets: 22 routes, all `programs.manage` except publishing (`rul
   - Toasts close by themselves after a few seconds.
   - ~~The admin-users screen's ignored date filter and "Disable" for disabled admins~~: fixed in AO-4 (ADM-34). The live screen has no date filter, and a disabled admin offers "Re-enable admin".
   - The admin app has no icon, so browsers ask for `/favicon.ico` and get a 404 on every page (found 3 Nov by AO-2's browser test). Add `src/app/icon.svg`.
-  - The shared `Modal` (packages/ui): a dialog that mounts already open closes itself in React's development double-run, and that close counts as "cancel" (found in AO-3). The 2FA prompt and AO-4's admin-user dialogs avoid it by staying mounted; fix it in the `Modal` so every dialog is safe.
+  - The shared `Modal` (packages/ui): a dialog that mounts already open closes itself in React's development double-run, and that close counts as "cancel" (found in AO-3). The 2FA prompt and the action dialogs (`src/components/action-dialog.tsx`, used by admin users and settings) avoid it by staying mounted; fix it in the `Modal` so every dialog is safe.
 - **Backend:** Frontend only · **Order:** AO-7
 - **Done when:** each bug is fixed and covered by a test where possible.
 
@@ -675,7 +676,7 @@ where p.email = 'admin@example.com';
 - **Build:**
   - Connect the existing confirm + code dialog to a real Supabase 2FA check (`mfa.challenge` + `mfa.verify`) before the action is sent.
   - Used for: role changes, disabling or re-enabling admins, settings changes and, later, payouts and risk actions.
-  - Where it goes for admin users (AO-4): each action already runs through one dialog in `src/components/admin-user-dialogs.tsx` (Add admin, Change roles, Disable / Re-enable). The code step goes there, before the request is sent.
+  - Where it goes: every change already runs through one dialog built on `src/components/action-dialog.tsx`. Admin users (AO-4): Add admin, Change roles, Disable / Re-enable in `admin-user-dialogs.tsx`. Settings (AO-6): the review dialog in `settings-screen.tsx`. The code step goes into those forms, before the request is sent.
 - **Backend:** Supabase (the backend doesn't check yet that the code is fresh: gap G4) · **Order:** AO-7
 - **Done when:** a wrong code stops the action, and a right code lets it through.
 
@@ -734,7 +735,7 @@ where p.email = 'admin@example.com';
   - **Read only:** no buttons. The API has no route to change an entry (DELETE, PATCH and PUT → 404, checked).
   - **Tried for real** against backend `dev` (`1d4c8bf`): API helper 24/24, browser 33/33, including a Finance viewer (IDs, filter by a typed ID) and a Support viewer ("You don't have permission for this page").
 
-#### ADM-36 · Settings ☐
+#### ADM-36 · Settings ☑ *(3 Nov, without the fresh 2FA code: that's ADM-19 in AO-7)*
 - **Build:**
   - all 7 settings from `GET /admin/settings`:
     - platform name
@@ -751,6 +752,15 @@ where p.email = 'admin@example.com';
 - **Permission:** `settings.manage` · **Backend:** Live · **Order:** AO-6
 - **Done when:** changes save and show in the audit log.
 - **Found in AO-5:** locally only 5 of the 7 settings have a saved value. `platform_name` and `support_email` have no row yet, so `GET /admin/settings/{key}` answers 404 for them and the list leaves them out. The screen must show those two as "not set yet". Saving one creates it, because `PUT` is an upsert.
+- **Done 3 Nov:**
+  - **Screen:** `src/components/settings-screen.tsx`; the rules behind it are in `src/lib/settings.ts`. Three groups: Trader sign-up, Platform, Trading and payouts. Each setting is saved on its own.
+  - **In use or not:** each setting says whether anything reads it (checked in the backend at `1d4c8bf`). Only sign-up reads two of them: `restricted_countries` (refuses those countries, and the website's public list shows them) and `min_age_years` (refuses a date of birth below it). The other 5 say "Not used yet" and why (G17). Sign-up stops completely if either of the two is missing, and the API has no delete, so they can't be removed.
+  - **Checked before sending:** text 1–120 characters, an email, a time as HH:mm, whole numbers in each range, and countries from the backend's 249 ISO codes (`apps/admin/contract/country-codes.json`, a copy, G16). Errors show under the field, only while the value differs from the saved one.
+  - **Review before saving:** "Now → New" in words, or, for countries, "Will be restricted" and "Can sign up again". "Not set yet" settings say saving creates them. The backend's own refusal (under `input`, `value` or `value.0`, G10) shows in the dialog.
+  - **No answer:** the dialog says the value may already be saved, and the settings load again. The dialog stays on screen while they load (a bug the browser test found).
+  - **Who changed it:** the admin's name, or "the initial setup" for seeded values.
+  - **Restricted countries:** search by name or code, chips for the chosen ones, "N to add · M to remove", a link to Bybit's official list, and the client decision (Q11: sign-up blocks the countries Bybit doesn't serve). **The list is still empty locally, so sign-up allows every country.** An admin must enter Bybit's list on this page (staging included).
+  - **Tried for real** against backend `dev` (`1d4c8bf`): API helper 17/17 and browser 39/39. Included: saving Antarctica made the website's public list show it, and sign-up from AQ was refused (COUNTRY_RESTRICTED). A minimum age of 21 refused a 19-year-old (UNDER_AGE). Both were put back, and the same sign-ups then passed those checks (they stopped at Terms, so no account was made). Every save was in the audit log, nothing was logged for refused values, and a Support admin gets the permission message. Settings were left exactly as found.
 
 #### ADM-37 · Settings: KYC gates ⏸
 - **Build:** choose when KYC is required, in any combination: at sign-up, before the funded account, before the first payout. The default is before the first payout. This is a client requirement.
@@ -990,6 +1000,8 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | **G13** | The contract doesn't list all 18 permission codes: `StaffRole.permissions` is plain text, and only the 7 codes the routes use appear (found in AO-4). Publish the `PermissionCode` list in `openapi.json`. | AD1-04 | Keeps a copy of the backend's list (`apps/admin/contract/permissions.json`), checked by a test; copy it again when the backend changes it |
 | **G14** | Audit IPs behind a proxy: the backend saves `request.ip` but never sets Express's `trust proxy`. On staging or production behind a load balancer, every entry would show the proxy's IP (found in AO-5). Set `trust proxy` to the host's proxy hops, and check one staging entry. | AD1-05, AO-8 | Shows the IP the backend saved; correct locally (`127.0.0.1`) |
 | **G15** | The audit "request ID" is a new random ID per entry, written only to the audit table. No request header or server log carries it, so an entry can't be matched to server logs (found in AO-5). Give each request one ID, log it, return it as a header, and save that one. | AD1-05 | Shows it as "Request ID" (it does identify the entry) |
+| **G16** | The contract's `CountryCode` only checks two capital letters; the 249 accepted codes (backend `iso-country-codes.ts`) aren't in `openapi.json` (found in AO-6). Publish them as an enum. | AD1-06 | Keeps a copy (`apps/admin/contract/country-codes.json`), checked by a test; copy it again when the backend changes it |
+| **G17** | 5 of the 7 settings aren't read by anything yet (found in AO-6): `platform_name` and `support_email` (no branding or emails yet); `daily_reset_utc` (the rules library takes the reset time as an input, but nothing passes the setting); `snapshot_interval_seconds` (no snapshot worker yet); `payout_wallet_hold_hours` (each program's payout policy has its own `wallet_hold_hours`, so decide which one wins). | AD1-06 | Each says "Not used yet" and why; change `inUse` in `src/lib/settings.ts` when the backend starts reading one |
 
 ---
 
@@ -1026,6 +1038,7 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | Error, loading and not-found files (ADM-06) | The bundled Next.js 16.3 docs: `error.md` (`retry`), `loading.md`, `not-found.md`; `forbidden.md` is still experimental, so it isn't used |
 | Admin users and roles (ADM-05, ADM-34) | Backend `dev` at `1d4c8bf`: `src/contracts/admin-foundation.ts` (StaffMember, StaffRole, request bodies), `src/contracts/permissions.ts`, `src/api/admin/admin-foundation.service.ts` (the self and last-Admin refusals, the search, the ID order), `src/api/admin/admin.service.ts` (one transaction per change with its audit record; the action is the operation ID), `supabase/seed.sql` (roles, permission descriptions) |
 | Audit log (ADM-35) | Backend `dev` at `1d4c8bf`: `src/contracts/admin-foundation.ts` (AuditRecord, the audit query), `src/api/admin/admin-foundation.service.ts` (`listAdminAuditLogs`: exact action and record type, `created_at` range, newest by ID), `src/api/admin/admin.service.ts` (the only writer: action = operation ID, IP = `request.ip`, request ID = random), `src/contracts/primitives.ts` (Timestamp: ISO 8601 with `Z`; UUID: RFC 9562) |
+| Settings (ADM-36) | Backend `dev` at `1d4c8bf`: `settingSchemas` in `src/api/admin/admin-foundation.service.ts` (the rules per key; `PUT` is an upsert), `src/contracts/iso-country-codes.ts` (249 codes), the sign-up hook `validate_trader_signup` in `supabase/migrations/20261103000100_sprint_1_signup.sql` (reads `restricted_countries` and `min_age_years`), `src/api/signup/signup.controller.ts` (public restricted-countries list), `src/lib/rules/trading-day.ts` (reset time is an input, default 00:00 UTC), `src/contracts/programs.ts` (per-program `wallet_hold_hours`); client decision Q11 in the project's client answers |
 
 ---
 
@@ -1044,3 +1057,4 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | 3 Nov 2026 | G5 | **Corrected.** Supabase's "Time-box user sessions" applies to every account in the project, so it must not be set to 12 h (traders get 7 days, see `docs/WEB_BUILD_PLAN.md`). The admin 12 h stays in the backend and the admin app. |
 | 3 Nov 2026 | AO-4 | **Done.** ADM-05: live roles matrix (4 roles × 18 permissions), one permission list for the app (`src/lib/auth/permissions.ts`) kept equal to the backend's by a test; the 16 old sample permissions removed. ADM-34: live admin users (list and search, add an existing account, change roles, disable, re-enable, details drawer), the backend's refusals shown as it words them; "Reset 2FA" says "Not available yet". Also: the top bar says "Live data" or "Sample data" for each page, and hides the sample clock on live pages; `DataTable` got optional row names, row test IDs, a drawer title and an empty message; the list hook can swap in one edited row; tables keep their screen-reader text inside their scroll box (a phone overflow found by the browser test). Checks: lint ✓, typecheck (both apps) ✓, tests web 29 + admin 129 (20 new) ✓, admin production build ✓, real backend 31/31 ✓, browser 50/50 ✓, AO-3 browser test again 26/26 ✓, AO-2 login test again 39/39 ✓. Contract unchanged at backend `1d4c8bf`. Found: G11, G12, G13. |
 | 3 Nov 2026 | AO-5 | **Done.** ADM-35: live audit log. Newest first, 50 per page with "Load more". The server filters by who, action, record type and UTC days; the screen filters IP on the loaded entries (G6). Actions and records are shown in words; the details drawer shows before and after with the changed fields first. Names come from the admin list when allowed, otherwise short IDs. Read only. The sample audit events were removed, and the top bar marks `/audit-log` and `/audit` as live. Checks: lint ✓, typecheck (both apps) ✓, tests web 29 + admin 140 (11 new) ✓, admin production build ✓, real backend 24/24 ✓, browser 33/33 ✓, again AO-4 50/50, AO-3 26/26, AO-2 39/39 ✓. Found: G14 (audit IPs behind a proxy), G15 (request ID not tied to logs), and that `platform_name` and `support_email` have no saved value yet (noted in ADM-36). |
+| 3 Nov 2026 | AO-6 | **Done.** ADM-36: live settings. All 7 in three groups, each checked before sending, reviewed ("Now → New", or countries to restrict and free) and saved on its own; "not set yet" ones are created by saving; each says whether anything uses it. The restricted-countries editor covers the backend's 249 ISO codes. The backend's refusals show in the dialog; with no answer, the settings load again and the dialog keeps its message. Also: the action-dialog frame is shared by admin users and settings; `outcomeUnknown` moved to `src/lib/api/errors.ts`; the sample settings data was removed; `/settings` is marked live. Checks: lint ✓, typecheck (both apps) ✓, tests web 29 + admin 155 (15 new) ✓, admin production build ✓, real backend 17/17 ✓ (sign-up obeys both settings), browser 39/39 ✓, again AO-5 33/33, AO-4 50/50, AO-3 26/26, AO-2 39/39 ✓. Found: G16 (country list not in the contract), G17 (5 settings nothing reads yet), and that the restricted list is still empty, so sign-up allows every country (client decision Q11 wants Bybit's list). |

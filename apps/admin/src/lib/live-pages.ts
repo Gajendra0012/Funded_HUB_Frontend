@@ -8,6 +8,7 @@ export const LIVE_PATHS: readonly string[] = [
   "/users", // alias of /admin-users
   "/audit-log", // AO-5 · ADM-35
   "/audit", // alias of /audit-log
+  "/settings", // AO-6 · ADM-36
 ];
 
 export function isLivePath(pathname: string): boolean {
