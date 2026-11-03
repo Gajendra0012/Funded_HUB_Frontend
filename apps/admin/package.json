@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "5.3.0",
+    "@funded-hub/config": "workspace:*",
     "@funded-hub/ui": "workspace:*",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.118.0",

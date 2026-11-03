@@ -8,10 +8,13 @@ Use Bun 1.3.5 and Node 24.
 
 ```sh
 bun install --frozen-lockfile
+cp apps/web/.env.example apps/web/.env.local     # then fill in the values
 bun run dev
 ```
 
-Open http://127.0.0.1:3000. Shared component specimens remain at `/design-system`. The web app needs no environment variables.
+Open http://127.0.0.1:3000. Shared component specimens remain at `/design-system`.
+
+The website needs four settings: the Supabase address, the Supabase publishable key, the backend address and the site's own address (email links are built from it). Without them, `next dev`, `next build` and `next start` stop with a message that lists what's missing. Trader sign-up and login are being built order by order: `docs/WEB_BUILD_PLAN.md`.
 
 ### Admin app
 
@@ -33,7 +36,7 @@ For the full local stack, see `docs/ADMIN_BUILD_PLAN.md`, step ADM-67. It covers
 
 ### Checks
 
-These cover both apps. `bun run build` needs the admin settings above.
+These cover both apps. `bun run build` needs the website and admin settings above.
 
 ```sh
 bun run lint

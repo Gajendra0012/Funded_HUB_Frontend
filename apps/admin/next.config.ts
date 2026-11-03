@@ -3,7 +3,7 @@ import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD, PHASE_PRODUCTION_SERV
 import { assertAdminEnv } from "./src/config/env";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@funded-hub/ui"],
+  transpilePackages: ["@funded-hub/ui", "@funded-hub/config"],
   poweredByHeader: false,
   devIndicators: { position: "bottom-right" },
 };

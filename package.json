@@ -24,7 +24,8 @@
   "workspaces": [
     "apps/web",
     "apps/admin",
-    "packages/ui"
+    "packages/ui",
+    "packages/config"
   ],
   "trustedDependencies": [
     "sharp",
