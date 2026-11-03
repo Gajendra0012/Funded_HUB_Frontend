@@ -6,7 +6,8 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 3101",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "api:types": "openapi-typescript contract/openapi.json --default-non-nullable=false --output src/lib/api/schema.d.ts"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "5.3.0",
@@ -20,10 +21,11 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.0",
-    "tailwindcss": "^4.1.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "openapi-typescript": "7.13.0",
+    "tailwindcss": "^4.1.0",
     "vitest": "^4.0.0"
   }
 }

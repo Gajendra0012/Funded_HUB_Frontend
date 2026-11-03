@@ -1,3 +1,4 @@
+import { AdminApiProvider } from "@/components/admin-api-provider";
 import { AdminShell } from "@/components/admin-shell";
 import { PreviewProvider } from "@/components/preview-provider";
 import { assertAdminEnv, environmentLabel } from "@/config/env";
@@ -23,9 +24,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <PreviewProvider data={initialState} config={{ roles, countryOptions, currentPreviewUser, permissionMatrix, descriptions }}>
-      <AdminShell navigation={navigation} identity={identity} showDev={process.env.NODE_ENV === "development"}>
-        {children}
-      </AdminShell>
+      <AdminApiProvider>
+        <AdminShell navigation={navigation} identity={identity} showDev={process.env.NODE_ENV === "development"}>
+          {children}
+        </AdminShell>
+      </AdminApiProvider>
     </PreviewProvider>
   );
 }

@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import { Drawer } from "@funded-hub/ui";
 import type { NavGroup } from "@/mocks/types";
+import type { ApiError } from "@/lib/api/errors";
+import { signOutToLogin, type LoginReason } from "@/lib/auth/sign-out";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
+import { useAdminApi } from "./admin-api-provider";
 import { Brand } from "./brand";
 import { SessionCountdown } from "./session-countdown";
 
@@ -46,6 +49,8 @@ export type ShellIdentity = {
   now: string;
 };
 
+type AccessState = { status: "checking" | "ok" } | { status: "error"; error: ApiError };
+
 export function AdminShell({
   children,
   navigation,
@@ -79,15 +84,37 @@ export function AdminShell({
 
   // Sign out (ADM-15): ends this browser's session, then shows the login page.
   const signOut = useCallback(
-    async (reason?: "expired") => {
+    async (reason?: LoginReason) => {
       setSigningOut(true);
-      await getBrowserSupabase().auth.signOut({ scope: "local" });
-      router.replace(reason ? `/login?reason=${reason}` : "/login");
-      router.refresh();
+      await signOutToLogin(router, reason);
     },
     [router],
   );
   const onSessionExpired = useCallback(() => void signOut("expired"), [signOut]);
+
+  // Admin access check (ADM-18 fallback until the backend's "who am I" endpoint, gap G1): once per page
+  // load, one call every admin role may make. 403 FORBIDDEN = not an active admin, so sign out and say so.
+  // The backend checks every call anyway; this only gives other accounts a clear answer.
+  const api = useAdminApi();
+  const [access, setAccess] = useState<AccessState>({ status: "checking" });
+  const [accessAttempt, setAccessAttempt] = useState(0);
+  const checkAccess = useEffectEvent(async (signal: AbortSignal) => {
+    const result = await api.get("/api/v1/admin/traders", { query: { limit: 1 }, signal });
+    if (signal.aborted) return;
+    if (result.ok) {
+      setAccess({ status: "ok" });
+    } else if (result.error.code === "FORBIDDEN") {
+      void signOut("no-access");
+    } else if (result.error.code !== "SESSION_ENDED" && result.error.code !== "ABORTED") {
+      // SESSION_ENDED: the API provider is already signing out.
+      setAccess({ status: "error", error: result.error });
+    }
+  });
+  useEffect(() => {
+    const controller = new AbortController();
+    void checkAccess(controller.signal);
+    return () => controller.abort();
+  }, [accessAttempt]);
 
   // Signed out in another tab: leave the admin pages in this tab too.
   useEffect(() => {
@@ -226,6 +253,22 @@ export function AdminShell({
           </div>
         </header>
         <main id="main-content" tabIndex={-1} className="content-wrap">
+          {access.status === "error" && (
+            <div className="inline-alert access-banner" role="alert" data-testid="access-banner">
+              <p>{access.error.message} Pages with live data may not load.</p>
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => {
+                  setAccess({ status: "checking" });
+                  setAccessAttempt((n) => n + 1);
+                }}
+                data-testid="access-retry"
+              >
+                Try again
+              </button>
+            </div>
+          )}
           {children}
         </main>
         <footer className="admin-footer">

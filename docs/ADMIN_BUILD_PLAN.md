@@ -3,8 +3,8 @@
 **Goal:** build the Funded HUB admin app (`apps/admin`) completely and correctly. We work **one build order at a time**, starting with what Sprint 1 needs.
 
 - Created: 2 Nov 2026
-- Last updated: 3 Nov 2026 (AO-2 done: real login with mandatory 2FA; ADM-70 added for a Next.js security fix)
-- Progress: **9 of 70 steps done** (AO-1 ☑, AO-2 ☑) · next: **ADM-70** (Next.js security fix, recommended first), then **AO-3**
+- Last updated: 3 Nov 2026 (AO-3 done: one API helper, paging, error pages, admin access check)
+- Progress: **13 of 70 steps done** (AO-1 ☑, AO-2 ☑, AO-3 ☑; ADM-18 ◐) · next: **ADM-70** (Next.js security fix, recommended first), then **AO-4**
 
 ---
 
@@ -28,15 +28,14 @@ The client checks it like this before paying, on **staging**:
 | AD1-04 | Roles and permissions view | Preview with the old 16 permissions | ✅ `GET /admin/roles` (4 roles, 18 permissions) | Show the live matrix | AO-4 |
 | AD1-05 | Audit log viewer | Preview with sample data | ✅ `GET /admin/audit-logs` with filters · ❌ IP filter · ❌ actor names | Connect the screen to the API | AO-5 |
 | AD1-06 | System settings | Preview (restricted countries only) | ✅ 7 settings, each saved with an audit record | Connect the screen to the API | AO-6 |
-| AD1-07 | Page protection, permission checks, 12-hour session, 2FA again for sensitive actions | ◐ Page protection and the 12-hour session done (AO-2, 3 Nov) | ✅ Permission check on every call · ❌ "who am I" · ❌ re-auth check · ❌ 12-hour limit | Permission handling, step-up 2FA | AO-3, AO-7 |
+| AD1-07 | Page protection, permission checks, 12-hour session, 2FA again for sensitive actions | ◐ Page protection and the 12-hour session (AO-2), permission handling, fallback version (AO-3) | ✅ Permission check on every call · ❌ "who am I" · ❌ re-auth check · ❌ 12-hour limit | Step-up 2FA; hiding by permission after G1 | AO-7 |
 | — | Live on **staging** | Not deployed | Not deployed | Deploy admin app and backend, create the first admin there | AO-8 |
 
 ✅ = built and tested on backend `dev` · ❌ = missing on the backend (see section 6, "Backend gaps")
 
 **Short answer: what's left for Sprint 1.**
-- **Done (AO-1, AO-2):** local stack, real login with mandatory 2FA, page protection, 12-hour session.
-- **Frontend work left (AO-3 to AO-7):**
-  - one API helper
+- **Done (AO-1 – AO-3):** local stack, real login with mandatory 2FA, page protection, 12-hour session, one API helper with paging, error pages and the admin access check.
+- **Frontend work left (AO-4 to AO-7):**
   - live roles, admin users, audit log and settings
   - a fresh 2FA check before sensitive actions
 - **Deployment to staging (AO-8):** needs a staging backend and hosted Supabase. Those are not confirmed yet; ask the manager.
@@ -91,7 +90,7 @@ Not part of this plan: the Sprint 1 line "Staging site: registration, email veri
 |---|---|---|---|---|---|
 | **AO-1** | Run the real backend locally and create the first admin | ADM-67, ADM-07, ADM-01 | Sprint 1 | 1 h | ☑ 3 Nov |
 | **AO-2** | Login with mandatory 2FA, page protection, sign out | ADM-11, ADM-12, ADM-13, ADM-14, ADM-15, ADM-16 | Sprint 1 | 3 h | ☑ 3 Nov |
-| **AO-3** | One API helper, paging, error and permission handling | ADM-08, ADM-09, ADM-10, ADM-06, ADM-18 | Sprint 1 | 2 h | ☐ |
+| **AO-3** | One API helper, paging, error and permission handling | ADM-08, ADM-09, ADM-10, ADM-06, ADM-18 | Sprint 1 | 2 h | ☑ 3 Nov |
 | **AO-4** | Roles matrix and admin users, live | ADM-05, ADM-34 | Sprint 1 | 2 h | ☐ |
 | **AO-5** | Audit log, live | ADM-35 | Sprint 1 | 1 h | ☐ |
 | **AO-6** | Settings, live | ADM-36 | Sprint 1 | 1 h | ☐ |
@@ -268,10 +267,11 @@ A step is ☑ only when all of these are true:
 ### Admin app
 
 - **Real login (AO-2, 3 Nov):** Supabase password + mandatory 2FA, page protection, sign out and the 12-hour session.
+- **Talking to the backend (AO-3, 3 Nov):** one API helper (`src/lib/api`) with the 2FA token, typed from the contract; cursor paging; error, loading and not-found pages; the admin access check on every page load. Lint blocks direct `fetch` calls in admin code.
 - **The screens are still a preview.**
   - 22 screens on sample data (`apps/admin/src/mocks`).
   - Every button only shows a "Sample… previewed" message.
-  - No permission check or paging yet.
+  - They move to the API helper one by one from AO-4.
 - **New readable colour palette** (2 Nov), in `packages/ui`, committed 3 Nov (`24661b6`).
 - **The app installs and runs** (workspace fix of 2 Nov) on the frontend `dev` branch.
 
@@ -331,6 +331,7 @@ Programs and rule sets: 22 routes, all `programs.manage` except publishing (`rul
   - Toasts close by themselves after a few seconds.
   - The admin-users screen's ignored date filter and "Disable" for disabled admins: fixed in ADM-34 when the screen goes live.
   - The admin app has no icon, so browsers ask for `/favicon.ico` and get a 404 on every page (found 3 Nov by AO-2's browser test). Add `src/app/icon.svg`.
+  - The shared `Modal` (packages/ui): a dialog that mounts already open closes itself in React's development double-run, and that close counts as "cancel" (found in AO-3). The 2FA prompt avoids it by staying mounted; fix it in the `Modal` so every dialog is safe.
 - **Backend:** Frontend only · **Order:** AO-7
 - **Done when:** each bug is fixed and covered by a test where possible.
 
@@ -374,7 +375,13 @@ Programs and rule sets: 22 routes, all `programs.manage` except publishing (`rul
 | `admins.manage` | ✓ | | | |
 | `audit.read` | ✓ | ✓ | | ✓ |
 
-#### ADM-06 · Real loading, error and not-found pages ☐
+#### ADM-06 · Real loading, error and not-found pages ☑ *(3 Nov)*
+
+**Done on 3 Nov:**
+- **Files:** `app/(app)/loading.tsx`, `error.tsx` (uses Next 16.3's `retry`), `not-found.tsx`, plus `app/global-error.tsx` for crashes in the root layout.
+- **Error screens never show the error's own text**, only a reference (`digest`) that matches the server log.
+- **Shared panel:** `components/api-error-panel.tsx` for API errors. It shows "Try again" only when trying again can help.
+- **Tried for real:** a page that crashed once showed the error screen inside the layout, and "Try again" loaded it. An unknown trader showed "We couldn't find this page".
 - **Build:**
   - `loading.tsx`, `error.tsx` and `not-found.tsx` for the admin pages
   - one shared "what went wrong" panel for API errors, with Retry
@@ -470,7 +477,13 @@ where p.email = 'admin@example.com';
 
 ### Talking to the backend
 
-#### ADM-08 · API types from the backend contract ☐
+#### ADM-08 · API types from the backend contract ☑ *(3 Nov)*
+
+**Done on 3 Nov:**
+- **Contract copy:** `apps/admin/contract/openapi.json`, byte for byte the backend's file at `4b81f8d` (v1.1.0, 35 admin operations).
+- **Types:** `bun run --cwd apps/admin api:types` generates `src/lib/api/schema.d.ts` with `openapi-typescript` 7.13.0 (dev only).
+  - `--default-non-nullable=false`, so fields with a default stay optional in request bodies, as the contract says.
+- **Type helpers** (`src/lib/api/types.ts`): each path + method gives its exact path IDs, query, body and answer. A wrong status value, a missing ID or a body on a GET doesn't compile (checked in `tests/api-contract.test.ts`).
 - **Build:**
   - Save a copy of the backend's `openapi.json` (v1.1.0, `4b81f8d`) in the admin app.
   - Generate TypeScript types from it with one script (`bun run api:types`).
@@ -478,7 +491,23 @@ where p.email = 'admin@example.com';
 - **Backend:** Live · **Order:** AO-3
 - **Done when:** the types for all 35 admin operations exist and the type check passes.
 
-#### ADM-09 · One API helper ☐
+#### ADM-09 · One API helper ☑ *(3 Nov)*
+
+**Done on 3 Nov:**
+- **`src/lib/api/client.ts`:** every call returns `{ ok, data, meta }` or `{ ok: false, error }`. Each call:
+  - carries the aal2 token, never cookies
+  - times out after 15 s
+  - doesn't follow redirects
+- **Recovery,** at most once per call:
+  - 401: renew the session and send again; if that fails, sign out to `/login?reason=ended`.
+  - `MFA_REQUIRED`: the 2FA code prompt (`components/two-factor-prompt.tsx`), then send again.
+  - Reads that fail on the way (no connection, timeout, 502/503/504): 2 more tries, 200–400 ms then 400–800 ms apart.
+  - Writes are never retried automatically.
+- **Messages:** one for each of the 20 contract error codes, plus no connection, timeout, cancelled, unexpected answer and session ended. Conflicts show the backend's reason; `VALIDATION_FAILED` keeps each field's message.
+- **Supabase can't be reached** while renewing: shown as "no connection", never a sign-out.
+- **Money and time:** `src/lib/api/format.ts`. Money stays text (no rounding, no JS numbers), and times print in UTC the same on server and browser.
+- **Pages get the helper** from `useAdminApi()` (`components/admin-api-provider.tsx`). Lint blocks `fetch` anywhere else in admin code.
+- **Tried for real** against backend `dev` (15/15): 404, 400 with field messages, SUPPORT's 403, `MFA_REQUIRED` → real 2FA code → 200, 401 → renewed → 200, backend down → retried, then a clear message.
 - **Build:** one function for every API call. It:
   - adds the 2FA login token (`Authorization: Bearer …`) from the Supabase session
   - reads success `{data, meta}` and errors `{error: {code, message, fields}}`
@@ -494,7 +523,16 @@ where p.email = 'admin@example.com';
 - **Backend:** Live · **Order:** AO-3
 - **Done when:** unit tests cover every error code, the token handling, and money and time formatting.
 
-#### ADM-10 · Tables with real paging and filters ☐
+#### ADM-10 · Tables with real paging and filters ☑ *(3 Nov)*
+
+**Done on 3 Nov:**
+- **`src/lib/api/paging.ts`:** the list state.
+  - Answers for older filters or older requests are dropped.
+  - Rows that show up twice are merged by ID (cursors are offsets).
+  - Empty filters are not sent (the API refuses empty text), and search is capped at 100 characters.
+- **`src/lib/api/use-cursor-list.ts`:** the hook (`useCursorList`) plus `useDebouncedValue` for search boxes.
+- **`components/load-more.tsx`:** "Load more", then "End of list · N shown". No totals (D5).
+- **Tried for real** on the traders list: one row per page reached all 3 traders with no repeats, and `q` and `status` were applied by the server. Screens start using it in AO-4.
 - **Build:**
   - lists load page by page with the API's cursor ("Load more")
   - search and filters are sent to the server
@@ -601,7 +639,14 @@ where p.email = 'admin@example.com';
 - **Backend:** Decision (D3)
 - **Done when:** decided and, if yes, built.
 
-#### ADM-18 · Permissions in the UI ◐ fallback in AO-3, full version after gap G1
+#### ADM-18 · Permissions in the UI ◐ fallback done in AO-3 (3 Nov), full version after gap G1
+
+**Fallback done on 3 Nov:**
+- **Access check:** once per page load, the admin shell calls `GET /api/v1/admin/traders?limit=1`.
+  - `403 FORBIDDEN` signs out to `/login?reason=no-access` ("This account doesn't have admin access").
+  - If the backend can't be reached, a banner says so, with "Try again".
+- **A 403 on a page** shows "You don't have permission for this page" (`ApiErrorPanel`).
+- **Tried for real:** a non-admin was signed out with the message (it still had to set up 2FA first; see G1), and a SUPPORT admin got 403 on settings.
 - **Fallback now (AO-3):**
   - show the signed-in email in the top bar (done in AO-2: the user menu shows the name and email)
   - **check admin access right after login** with one call every role may make: `GET /api/v1/admin/traders` (all 4 roles have `traders.read`). On `403 FORBIDDEN`, sign out with "This account has no admin access".
@@ -630,6 +675,7 @@ where p.email = 'admin@example.com';
   - **List:** `GET /admin/users` with search (`q`) and "Load more". Columns: name, email, roles, status, 2FA enrolled, last login.
   - **Add admin:** find an **existing account** by email (`GET /admin/traders?q=`), pick one or more roles, then `POST /admin/users` with `profile_id` and `role_ids`.
     - The person must have signed up first. The backend doesn't create logins or send invites (gap G3).
+    - Found in AO-3: the traders list leaves out admin members, so this search only finds accounts that aren't admins yet, which is what "Add admin" needs.
   - **Change roles:** `PATCH /admin/users/{id}` with `role_ids`.
   - **Disable:** `DELETE /admin/users/{id}`.
   - **Re-enable:** `PATCH` with `status: ACTIVE`.
@@ -662,6 +708,7 @@ where p.email = 'admin@example.com';
     - payout wallet hold (hours)
     - minimum age
   - save each with `PUT /admin/settings/{key}`, showing the backend's validation messages
+    - Found in AO-3: a bad value comes back under the field name `input`, not `value` (gap G10). Show it under the value field.
   - restricted-countries editor (ISO country codes). Suggested start: Bybit's 11 codes (US, CN, HK, SG, CA, KP, CU, IR, UZ, SD, SY).
   - every save uses the fresh 2FA check (ADM-19)
 - **Permission:** `settings.manage` · **Backend:** Live · **Order:** AO-6
@@ -890,7 +937,7 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 
 | ID | Missing on the backend | Sprint task | What the panel does until then |
 |---|---|---|---|
-| **G1** | A "who am I" endpoint for admins (e.g. `GET /admin/me`: my member record, roles, permissions). Ideally it also answers before the 2FA step (`aal1`), so the login can turn away non-admin accounts before they set up 2FA. | AD1-07 | Shows the name and email (AO-2); after login, one call every role may make tells admins from other accounts (AO-3); explains 403s; can't hide what you can't use (ADM-18) |
+| **G1** | A "who am I" endpoint for admins (e.g. `GET /admin/me`: my member record, roles, permissions). Ideally it also answers before the 2FA step (`aal1`), so the login can turn away non-admin accounts before they set up 2FA. | AD1-07 | Shows the name and email (AO-2); on every page load, one call every role may make tells admins from other accounts, and signs the others out (AO-3); explains 403s; can't hide what you can't use (ADM-18) |
 | **G2** | Reset another admin's 2FA (needs the Supabase admin API on the server) | AD1-03 | "Reset 2FA" shows "Not available yet" |
 | **G3** | Invite or create an admin login by email; today `POST /users` only grants access to an existing account | AD1-03 | "Add admin" picks an account that already signed up |
 | **G4** | Check that a fresh 2FA code was entered before sensitive actions (role changes, disabling admins, settings, payouts, risk actions) | AD1-07 | Asks for a real fresh code in the browser (ADM-19); the API doesn't check it |
@@ -899,6 +946,7 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | **G7** | First admin on staging: there is no script, only manual SQL | Sprint 1 | ADM-67's SQL, run by the backend engineer on staging |
 | **G8** | Staging: deployed backend + hosted Supabase (2FA on) + `ADMIN_URL` set to the staging admin address | Sprint 1 acceptance | Demo only on this computer until it exists (AO-8 ⏸) |
 | **G9** | Admin password strength: local Supabase allows 6 characters with no rules | Security | Nothing in the panel; set a strong policy in hosted Supabase |
+| **G10** | `PUT /admin/settings/{key}` reports a bad value under the field name `input` instead of `value` (found in AO-3) | AD1-06 | Shows `input` messages under the value field (ADM-36) |
 
 ---
 
@@ -931,6 +979,8 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | Client decisions | The project's client answers log |
 | Supabase session limits (G5) | [Supabase: User sessions](https://supabase.com/docs/guides/auth/sessions) (time-box, Pro plan) |
 | Next.js advisories (ADM-70) | GitHub Advisory Database: GHSA-2464-fhr4-w9xw, GHSA-673q-mjm6-r5xr, GHSA-p3m5-59mp-jv5r |
+| API types (ADM-08) | `openapi-typescript` 7.13.0 (MIT, openapi-ts project, released 11 Feb 2026, no advisories) |
+| Error, loading and not-found files (ADM-06) | The bundled Next.js 16.3 docs: `error.md` (`retry`), `loading.md`, `not-found.md`; `forbidden.md` is still experimental, so it isn't used |
 
 ---
 
@@ -945,3 +995,4 @@ The admin API on backend `dev` covers most of Sprint 1. These pieces are missing
 | 3 Nov 2026 | – | **Rebuilt as build orders (AO-1 …).** Reasons: the backend's `dev` branch now has a live admin API (35 routes, contract v1.1.0, `4b81f8d`), and Sprint 1 promises "admin panel with mandatory 2FA, roles and audit log" for the Wed 4 Nov demo. Changes: Sprint 1 orders come first; programs, rule sets and trader basics moved from "API defined" to "Live"; the sample mode in ADM-09 was dropped (the screens it served now have a live API); ADM-34 – ADM-36 rewritten to the real API; added ADM-67 (local backend + first admin), ADM-68 (staging) and ADM-69 (Sprint 1 demo check); added backend gaps G1–G9 and question D7. |
 | 3 Nov 2026 | AO-2 | **Done.** ADM-11 – ADM-16: real Supabase login with mandatory 2FA (setup on first login, code on every login), page protection in `proxy.ts` plus a server check, sign out, and the 12-hour session with a top-bar timer. Sample login preview removed. Checks: lint ✓, admin typecheck ✓, admin tests 49 ✓ (23 new), admin production build ✓, real run in Edge 38/38 ✓ (phone width and both 12-hour paths included), no-connection run 4/4 ✓, QR code decoded ✓. Still to do: the first scan with a phone authenticator app, by the user. |
 | 3 Nov 2026 | ADM-70 | **Added.** `bun audit` found 2 critical and 1 high Next.js advisories for 16.0.0 – 16.4.0; both apps use 16.3.8; fixed in 16.4.1. Also from AO-2's tests: the admin favicon 404 (added to ADM-03), non-admin accounts can sign in until AO-3's access check (ADM-18, G1 updated), and the 12-hour limit isn't enforced for direct API calls (G5 updated). |
+| 3 Nov 2026 | AO-3 | **Done.** ADM-08: contract copy + generated types (`openapi-typescript` 7.13.0, dev only). ADM-09: one API helper (2FA token, timeouts, safe read retries, session renewal, 2FA prompt, a message per error code, money as text, UTC times); lint blocks direct `fetch`. ADM-10: cursor paging (list state, hook, "Load more"). ADM-06: loading, error (with `retry`) and not-found pages, plus a shared API error panel. ADM-18 fallback: access check on every page load signs non-admins out. Checks: lint ✓, typecheck (both apps) ✓, tests web 15 + admin 109 (60 new) ✓, admin production build ✓, real backend 15/15 ✓, browser 26/26 ✓, AO-2 login test again 39/39 ✓. Local QA accounts made for testing (qa-admin, qa-support, qa-newadmin, qa-trader 1–3). Found: G10 (settings field name), the shared `Modal`'s dev double-run close (ADM-03), the traders list leaves out admin members (ADM-34). |

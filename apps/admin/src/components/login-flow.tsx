@@ -4,7 +4,7 @@ import { useEffect, useEffectEvent, useRef, useState, type FormEvent } from "rea
 import { useRouter } from "next/navigation";
 import { CodeInput, CopyButton, Stepper } from "@funded-hub/ui";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
-import { groupSecret, LOGIN_MESSAGES, loginErrorMessage, nextLoginStep, qrImageSource, type LoginStep } from "@/lib/auth/login-step";
+import { groupSecret, loginErrorMessage, loginNotice, nextLoginStep, qrImageSource, type LoginStep } from "@/lib/auth/login-step";
 import { Brand } from "./brand";
 
 /*
@@ -154,6 +154,7 @@ export function LoginFlow({ next, reason }: { next: string; reason: string | nul
 
   const secondStepLabel = step === "enroll" ? "Set up 2FA" : "2FA code";
   const stepIndex = step === "credentials" || step === "loading" ? 0 : 1;
+  const notice = loginNotice(reason);
 
   return (
     <section className="login-card login-flow" aria-busy={step === "loading" || busy}>
@@ -166,9 +167,9 @@ export function LoginFlow({ next, reason }: { next: string; reason: string | nul
       </h1>
       <Stepper steps={["Password", secondStepLabel]} current={stepIndex} />
 
-      {reason === "expired" && step === "credentials" && !error && (
-        <p className="inline-alert" role="status" data-testid="login-expired">
-          {LOGIN_MESSAGES.expired}
+      {notice && step === "credentials" && !error && (
+        <p className="inline-alert" role="status" data-testid="login-notice" data-reason={reason}>
+          {notice}
         </p>
       )}
       {error && (

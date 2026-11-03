@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { decideAccess, safeNextPath } from "../src/lib/auth/access";
 import { ADMIN_SESSION_HOURS, displayName, initialsOf, sessionExpiresAt, sessionStartedAt, sessionState, type SessionClaims } from "../src/lib/auth/claims";
-import { groupSecret, LOGIN_MESSAGES, loginErrorMessage, nextLoginStep, qrImageSource } from "../src/lib/auth/login-step";
+import { groupSecret, isTemporaryAuthError, LOGIN_MESSAGES, loginErrorMessage, loginNotice, nextLoginStep, qrImageSource } from "../src/lib/auth/login-step";
 import { formatRemaining } from "../src/components/session-countdown";
 
 const SIGNED_IN_AT = 1_762_000_000; // seconds
@@ -133,6 +133,21 @@ describe("login steps (ADM-12 – ADM-14)", () => {
     const offline = { name: "AuthRetryableFetchError", status: 0 };
     expect(loginErrorMessage(offline, "credentials")).toBe(LOGIN_MESSAGES.unavailable);
     expect(loginErrorMessage(offline, "code")).toBe(LOGIN_MESSAGES.unavailable);
+  });
+
+  it("explains why the login page is shown again (AO-3: no admin access, session ended)", () => {
+    expect(loginNotice("expired")).toBe(LOGIN_MESSAGES.expired);
+    expect(loginNotice("no-access")).toBe("This account doesn't have admin access. Sign in with an admin account.");
+    expect(loginNotice("ended")).toBe(LOGIN_MESSAGES.ended);
+    expect(loginNotice(null)).toBeNull();
+    expect(loginNotice("<script>")).toBeNull();
+  });
+
+  it("tells a connection problem from a refused session (only the second signs out)", () => {
+    expect(isTemporaryAuthError({ name: "AuthRetryableFetchError", status: 0 })).toBe(true);
+    expect(isTemporaryAuthError({ status: 503 })).toBe(true);
+    expect(isTemporaryAuthError({ status: 400, name: "AuthApiError" })).toBe(false);
+    expect(isTemporaryAuthError(null)).toBe(false);
   });
 
   it("re-encodes the QR code so a '#' in the SVG can't break it", () => {

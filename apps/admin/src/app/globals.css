@@ -227,7 +227,9 @@ textarea {resize:vertical;min-height:88px;}
 .ui-modal {overscroll-behavior:contain;}.ui-tabs {overflow-x:auto;scrollbar-width:thin;gap:20px;}.ui-tabs button {white-space:nowrap;flex-shrink:0;}
 .ui-diff pre {max-height:360px;overflow:auto;}.ui-toast {overflow-wrap:anywhere;}
 .login-flow {padding:28px 32px;}.login-flow .admin-brand {margin-bottom:24px;}.login-flow h1 {font-size:25px;margin:14px 0 20px;}.login-flow h1 em {font-size:1.15em;}
-.login-flow .ui-stepper {gap:12px;}.login-flow .ui-stepper li {gap:5px;font-size:12px;}.login-flow .inline-alert {margin:20px 0 0;}.login-flow .ui-stepper li>span {width:24px;height:24px;font-size:12px;}
+.login-flow .ui-stepper {gap:12px;}.login-flow .ui-stepper li {gap:5px;font-size:12px;}.login-flow .inline-alert {margin:20px 0 0;}
+.access-banner {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px 16px;margin-bottom:24px;}.access-banner p {margin:0;}
+.load-more {display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;padding:16px;margin:0;}.login-flow .ui-stepper li>span {width:24px;height:24px;font-size:12px;}
 .login-flow .ops-form {margin-block:24px;}.login-flow .ops-form h2 {margin:0;}.login-flow .ops-form p {font-size:14px;line-height:1.7;margin:0;}
 .login-flow .ops-form>button {justify-self:stretch;}.login-flow .ui-code {margin:8px 0;gap:6px;}.login-flow .ui-code input {width:42px;}
 .qr-code {display:block;margin:8px auto 4px;width:184px;height:184px;padding:10px;border-radius:var(--radius-control);background:var(--admin-ink);}

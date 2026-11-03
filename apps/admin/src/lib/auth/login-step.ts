@@ -26,16 +26,28 @@ export const LOGIN_MESSAGES = {
   tooMany: "Too many attempts. Wait a few minutes, then try again.",
   wrongCode: "That code didn't work. Enter the newest 6-digit code from your authenticator app.",
   expired: "Your admin session ended after 12 hours. Please sign in again.",
+  noAccess: "This account doesn't have admin access. Sign in with an admin account.",
+  ended: "Your session has ended. Please sign in again.",
   unavailable: "Sign-in is unavailable right now. Try again in a moment.",
 } as const;
+
+/** The note above the login form for /login?reason=…, or null for no (or an unknown) reason. */
+export function loginNotice(reason: string | null): string | null {
+  if (reason === "expired") return LOGIN_MESSAGES.expired;
+  if (reason === "no-access") return LOGIN_MESSAGES.noAccess;
+  if (reason === "ended") return LOGIN_MESSAGES.ended;
+  return null;
+}
+
+/** No connection to Supabase (it reports status 0) or a Supabase server error: worth trying again, and not the admin's fault. */
+export function isTemporaryAuthError(error: { status?: number; name?: string } | null | undefined): boolean {
+  return error?.name === "AuthRetryableFetchError" || error?.status === 0 || (error?.status !== undefined && error.status >= 500);
+}
 
 /** Turns a Supabase auth error into one of the messages above. */
 export function loginErrorMessage(error: { status?: number; code?: string; name?: string } | null, step: "credentials" | "code"): string {
   if (error?.status === 429 || error?.code === "over_request_rate_limit") return LOGIN_MESSAGES.tooMany;
-  // No connection (Supabase reports status 0) or a server error: not the admin's fault, so don't blame the password or code.
-  if (error?.name === "AuthRetryableFetchError" || error?.status === 0 || (error?.status !== undefined && error.status >= 500)) {
-    return LOGIN_MESSAGES.unavailable;
-  }
+  if (isTemporaryAuthError(error)) return LOGIN_MESSAGES.unavailable;
   return step === "code" ? LOGIN_MESSAGES.wrongCode : LOGIN_MESSAGES.generic;
 }
 
