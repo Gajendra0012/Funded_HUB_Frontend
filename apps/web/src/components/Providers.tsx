@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from "react";
 import { MotionConfig } from "motion/react";
+import { SessionSync } from "@/components/auth/SessionSync";
 import { DemoControls } from "@/components/DemoControls";
 import { Toaster } from "@/components/ui/Toaster";
 import { ConnectWalletModal } from "@/components/wallet/ConnectWalletModal";
@@ -16,6 +17,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <MotionConfig reducedMotion="user">
+      <SessionSync />
       {children}
       <ConnectWalletModal />
       <Toaster />

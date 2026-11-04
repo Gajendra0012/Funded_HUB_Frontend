@@ -37,6 +37,15 @@ describe("session timing (ADM-15: 12-hour admin session)", () => {
     expect(sessionState({ sub: "u", aal: "aal2", amr: ["password", "totp"] }, SIGNED_IN_AT)).toBe("expired");
   });
 
+  it("refuses an account the token marks as not an admin, and leaves a token without the claim to the backend", () => {
+    expect(sessionState(claims("aal2", { is_admin: false, admin_permissions: [] }), SIGNED_IN_AT + HOUR)).toBe("not-admin");
+    expect(sessionState(claims("aal2", { is_admin: true, admin_permissions: ["audit.read"] }), SIGNED_IN_AT + HOUR)).toBe("active");
+    expect(sessionState(claims("aal2"), SIGNED_IN_AT + HOUR)).toBe("active");
+    // The 2FA code and the 12-hour limit still come first.
+    expect(sessionState(claims("aal1", { is_admin: false }), SIGNED_IN_AT + HOUR)).toBe("needs-2fa");
+    expect(sessionState(claims("aal2", { is_admin: false }), SIGNED_IN_AT + 12 * HOUR)).toBe("expired");
+  });
+
   it("is signed out without a session", () => {
     expect(sessionState(null, SIGNED_IN_AT)).toBe("signed-out");
   });
@@ -77,6 +86,19 @@ describe("page protection rules (ADM-16)", () => {
     expect(decideAccess({ pathname: "/settings", search: "", claims: claims("aal2"), nowSeconds: at(12) })).toEqual({
       action: "redirect",
       location: "/login?reason=expired",
+      signOut: true,
+    });
+  });
+
+  it("signs out a non-admin account and says why, without looping on /login", () => {
+    const notAdmin = claims("aal2", { is_admin: false, admin_permissions: [] });
+    expect(decideAccess({ pathname: "/traders", search: "", claims: notAdmin, nowSeconds: at(1) })).toEqual({
+      action: "redirect",
+      location: "/login?reason=no-access",
+      signOut: true,
+    });
+    expect(decideAccess({ pathname: "/login", search: "?reason=no-access", claims: notAdmin, nowSeconds: at(1) })).toEqual({
+      action: "allow",
       signOut: true,
     });
   });

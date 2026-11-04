@@ -1,30 +1,36 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+/*
+ * Trader sign-in and sign-up (WEB-10, WEB-11), with Supabase Auth.
+ *
+ *   Log in:  email + password, or Google  →  6-digit 2FA code (only if the trader turned 2FA on)  →  dashboard
+ *   Sign up: name, email, password, country, terms  →  "check your email" (confirmation link)  →  dashboard
+ *            or Google (no email to confirm)
+ *
+ * Links in emails and Google come back through /auth/callback. src/proxy.ts keeps the dashboard
+ * closed until the sign-in is complete (including the 2FA code).
+ */
+
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowRight, Eye, EyeOff, Lock, Mail, MailCheck, ShieldCheck, User } from "lucide-react";
 import { motion } from "motion/react";
-import { ArrowRight, Eye, EyeOff, Lock, Mail, User, Zap } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select } from "@/components/ui/Field";
 import { Checkbox } from "@/components/ui/Toggle";
+import { assertWebEnv } from "@/config/env";
 import { COUNTRIES, flag } from "@/data/countries";
+import { identityFromUser, splitName } from "@/lib/auth/identity";
+import { AUTH_MESSAGES, authErrorMessage, loginNotice } from "@/lib/auth/messages";
+import { CODE_PATTERN, needsSecondFactor, verifySignInCode } from "@/lib/auth/mfa";
+import { callbackUrl, HOME_AFTER_LOGIN, RESET_PASSWORD_PATH, safeNextPath } from "@/lib/auth/redirects";
 import { cn } from "@/lib/cn";
 import { useDemoStore } from "@/lib/store";
+import { getBrowserSupabase } from "@/lib/supabase/browser";
 import { toast } from "@/lib/toast";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-function safeNext(next: string | null): string {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
-}
-
-function nameFromEmail(email: string): string {
-  const local = email.split("@")[0] ?? "Trader";
-  const parts = local.split(/[._-]+/).filter(Boolean);
-  const name = parts.map((p) => p[0].toUpperCase() + p.slice(1).toLowerCase()).join(" ");
-  return name || "Trader";
-}
 
 function GoogleMark() {
   return (
@@ -68,36 +74,188 @@ function Divider() {
   );
 }
 
+function Alert({ children, tone = "error" }: { children: React.ReactNode; tone?: "error" | "info" }) {
+  return (
+    <p role={tone === "error" ? "alert" : "status"} className={cn("mt-5 rounded-xl border px-3.5 py-2.5 text-sm", tone === "error" ? "border-loss/30 bg-loss/10 text-loss" : "border-line bg-white/[0.03] text-muted")}>
+      {children}
+    </p>
+  );
+}
+
+/** "Continue with Google": Supabase sends the trader to Google, then back through /auth/callback. */
+function GoogleButton({ next, label }: { next: string; label: string }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const start = async () => {
+    setBusy(true);
+    setError(null);
+    const { error: oauthError } = await getBrowserSupabase().auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: callbackUrl(assertWebEnv().siteUrl, next) },
+    });
+    // On success the browser is already on its way to Google.
+    if (oauthError) {
+      setError(authErrorMessage(oauthError));
+      setBusy(false);
+    }
+  };
+  return (
+    <>
+      <Button onClick={start} variant="secondary" size="lg" fullWidth className="mt-7" loading={busy} iconLeft={busy ? undefined : <GoogleMark />}>
+        {label}
+      </Button>
+      {error && <Alert>{error}</Alert>}
+    </>
+  );
+}
+
+/** Puts the signed-in trader into the dashboard's store, then opens the requested page. */
+async function enterDashboard(router: ReturnType<typeof useRouter>, next: string) {
+  const { data } = await getBrowserSupabase().auth.getUser();
+  if (data.user) useDemoStore.getState().login(identityFromUser(data.user));
+  router.replace(next);
+  router.refresh();
+}
+
+/* ───────────── Log in ───────────── */
+
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = safeNext(params.get("next"));
+  const next = safeNextPath(params.get("next"));
+  const [step, setStep] = useState<"loading" | "credentials" | "code">("loading");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(true);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [code, setCode] = useState("");
+  const [errors, setErrors] = useState<{ email?: string; password?: string; code?: string }>({});
+  const [alert, setAlert] = useState<{ text: string; tone: "error" | "info"; resend?: boolean } | null>(() => {
+    const notice = loginNotice(params.get("error"));
+    return notice ? { text: notice, tone: "error" } : null;
+  });
   const [loading, setLoading] = useState(false);
 
-  const submit = (e: FormEvent) => {
+  // Coming back from Google (or a reload) with 2FA still to do: resume at the code step.
+  const resumed = useRef(false);
+  useEffect(() => {
+    if (resumed.current) return;
+    resumed.current = true;
+    void (async () => {
+      const { data } = await getBrowserSupabase().auth.getSession();
+      if (data.session && (await needsSecondFactor().catch(() => false))) setStep("code");
+      else setStep("credentials");
+    })();
+  }, []);
+
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     const errs: typeof errors = {};
     if (!EMAIL.test(email.trim())) errs.email = "Enter a valid email address.";
-    if (password.length < 4) errs.password = "Password must be at least 4 characters.";
+    if (!password) errs.password = "Enter your password.";
     setErrors(errs);
     if (errs.email || errs.password) return;
     setLoading(true);
-    setTimeout(() => {
-      useDemoStore.getState().login({ name: nameFromEmail(email.trim()), email: email.trim(), country: "GB" });
-      toast.success("Welcome back", "Signed in to the demo dashboard.");
-      router.push(next);
-    }, 850);
+    setAlert(null);
+    const { error } = await getBrowserSupabase().auth.signInWithPassword({ email: email.trim(), password });
+    if (error) {
+      setAlert({ text: authErrorMessage(error), tone: "error", resend: error.code === "email_not_confirmed" });
+      setLoading(false);
+      return;
+    }
+    if (await needsSecondFactor().catch(() => false)) {
+      setStep("code");
+      setLoading(false);
+      return;
+    }
+    toast.success("Welcome back", "You're signed in.");
+    await enterDashboard(router, next);
   };
 
-  const demo = () => {
-    useDemoStore.getState().loginDemo();
-    toast.success("Signed in as Demo Trader", "Alex Morgan · 3 accounts loaded.");
-    router.push(next);
+  const submitCode = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!CODE_PATTERN.test(code)) {
+      setErrors({ code: "Enter the 6-digit code from your authenticator app." });
+      return;
+    }
+    setLoading(true);
+    const result = await verifySignInCode(code);
+    if (!result.ok) {
+      setErrors({ code: result.message });
+      setCode("");
+      setLoading(false);
+      return;
+    }
+    toast.success("Welcome back", "You're signed in.");
+    await enterDashboard(router, next);
   };
+
+  const forgotPassword = async () => {
+    if (!EMAIL.test(email.trim())) {
+      setErrors((x) => ({ ...x, email: "Enter your email first to reset your password." }));
+      return;
+    }
+    const { error } = await getBrowserSupabase().auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: callbackUrl(assertWebEnv().siteUrl, RESET_PASSWORD_PATH),
+    });
+    // Same answer whether or not the email has an account.
+    if (error && error.status !== 400) setAlert({ text: authErrorMessage(error), tone: "error" });
+    else setAlert({ text: `If ${email.trim()} has an account, a reset link is on its way.`, tone: "info" });
+  };
+
+  const resendConfirmation = async () => {
+    const { error } = await getBrowserSupabase().auth.resend({
+      type: "signup",
+      email: email.trim(),
+      options: { emailRedirectTo: callbackUrl(assertWebEnv().siteUrl, next) },
+    });
+    setAlert(error ? { text: authErrorMessage(error), tone: "error" } : { text: `A new confirmation link was sent to ${email.trim()}.`, tone: "info" });
+  };
+
+  const useAnotherAccount = async () => {
+    await getBrowserSupabase().auth.signOut({ scope: "local" });
+    setCode("");
+    setErrors({});
+    setStep("credentials");
+  };
+
+  if (step === "loading") {
+    return <p className="text-sm text-muted">Checking your session…</p>;
+  }
+
+  if (step === "code") {
+    return (
+      <div>
+        <h1 className="text-3xl font-semibold tracking-[-0.035em]">Enter your 2FA code</h1>
+        <p className="mt-2 text-sm text-muted">Open your authenticator app and enter the 6-digit code for Funded HUB.</p>
+        <form onSubmit={submitCode} noValidate className="mt-7 space-y-4">
+          <Field label="6-digit code" htmlFor="login-code" error={errors.code}>
+            <Input
+              id="login-code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              autoFocus
+              placeholder="123 456"
+              value={code}
+              invalid={!!errors.code}
+              icon={<ShieldCheck />}
+              className="num text-lg tracking-[0.3em]"
+              onChange={(e) => {
+                setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                setErrors({});
+              }}
+            />
+          </Field>
+          <Button type="submit" size="lg" fullWidth loading={loading} disabled={!CODE_PATTERN.test(code)} iconRight={loading ? undefined : <ArrowRight className="size-4" />}>
+            {loading ? "Checking…" : "Verify and continue"}
+          </Button>
+        </form>
+        <p className="mt-6 text-center text-sm text-muted">
+          <button type="button" onClick={useAnotherAccount} className="font-medium text-fg hover:text-accent-1">
+            Use a different account
+          </button>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -105,11 +263,22 @@ export function LoginForm() {
       <p className="mt-2 text-sm text-muted">Log in to track your accounts, objectives and rewards.</p>
 
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <Button onClick={demo} size="lg" fullWidth className="mt-7" iconLeft={<Zap className="size-4" />}>
-          Continue as Demo Trader
-        </Button>
-        <p className="mt-2 text-center text-xs text-muted">Any email and password also work in this demo.</p>
+        <GoogleButton next={next} label="Continue with Google" />
       </motion.div>
+
+      {alert && (
+        <Alert tone={alert.tone}>
+          {alert.text}
+          {alert.resend && (
+            <>
+              {" "}
+              <button type="button" onClick={resendConfirmation} className="font-medium underline">
+                Send a new link
+              </button>
+            </>
+          )}
+        </Alert>
+      )}
 
       <Divider />
 
@@ -134,17 +303,7 @@ export function LoginForm() {
           htmlFor="login-password"
           error={errors.password}
           aside={
-            <button
-              type="button"
-              className="text-xs font-medium text-accent-2 hover:underline"
-              onClick={() => {
-                if (!EMAIL.test(email.trim())) {
-                  setErrors((x) => ({ ...x, email: "Enter your email first to reset your password." }));
-                  return;
-                }
-                toast.info("Reset link sent", `Check ${email.trim()} for a password reset link.`);
-              }}
-            >
+            <button type="button" className="text-xs font-medium text-accent-2 hover:underline" onClick={forgotPassword}>
               Forgot password?
             </button>
           }
@@ -160,9 +319,6 @@ export function LoginForm() {
             }}
           />
         </Field>
-        <Checkbox id="login-remember" checked={remember} onChange={setRemember}>
-          Keep me signed in on this device
-        </Checkbox>
         <Button type="submit" variant="secondary" size="lg" fullWidth loading={loading} iconRight={!loading ? <ArrowRight className="size-4" /> : undefined}>
           {loading ? "Signing in…" : "Log in"}
         </Button>
@@ -177,6 +333,8 @@ export function LoginForm() {
     </div>
   );
 }
+
+/* ───────────── Sign up ───────────── */
 
 function strength(pw: string): { score: 0 | 1 | 2 | 3 | 4; label: string } {
   if (!pw) return { score: 0, label: "Use 8+ characters with a mix of letters, numbers and symbols" };
@@ -201,10 +359,12 @@ export function SignupForm() {
   const [country, setCountry] = useState("");
   const [terms, setTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
-  const [loading, setLoading] = useState<"form" | "google" | null>(null);
+  const [alert, setAlert] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
   const st = strength(password);
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     const errs: Record<string, string | undefined> = {};
     if (name.trim().length < 2) errs.name = "Enter your full name.";
@@ -214,31 +374,80 @@ export function SignupForm() {
     if (!terms) errs.terms = "Please accept the terms to continue.";
     setErrors(errs);
     if (Object.values(errs).some(Boolean)) return;
-    setLoading("form");
-    setTimeout(() => {
-      useDemoStore.getState().login({ name: name.trim(), email: email.trim(), country });
+
+    setLoading(true);
+    setAlert(null);
+    const { data, error } = await getBrowserSupabase().auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        // Read by the database when the account is created (profiles.first_name / last_name).
+        data: { ...splitName(name), country_code: country, terms_accepted_at: new Date().toISOString() },
+        emailRedirectTo: callbackUrl(assertWebEnv().siteUrl, HOME_AFTER_LOGIN),
+      },
+    });
+    setLoading(false);
+    if (error) {
+      setAlert(authErrorMessage(error));
+      return;
+    }
+    // Email confirmation off in Supabase: the account is ready and signed in.
+    if (data.session) {
       toast.success("Account created", "Welcome to Funded HUB — pick your first challenge any time.");
-      router.push("/dashboard");
-    }, 900);
+      await enterDashboard(router, HOME_AFTER_LOGIN);
+      return;
+    }
+    // Otherwise a confirmation link was sent. (For an email that already has an account Supabase
+    // answers the same way, so this page never reveals who is registered.)
+    setSentTo(email.trim());
   };
 
-  const google = () => {
-    setLoading("google");
-    setTimeout(() => {
-      useDemoStore.getState().loginDemo();
-      toast.success("Signed up with Google", "Demo account connected.");
-      router.push("/dashboard");
-    }, 900);
+  const resend = async () => {
+    if (!sentTo) return;
+    const { error } = await getBrowserSupabase().auth.resend({
+      type: "signup",
+      email: sentTo,
+      options: { emailRedirectTo: callbackUrl(assertWebEnv().siteUrl, HOME_AFTER_LOGIN) },
+    });
+    if (error) toast.error("Couldn't send the link", authErrorMessage(error));
+    else toast.success("Link sent", `A new confirmation link is on its way to ${sentTo}.`);
   };
+
+  if (sentTo) {
+    return (
+      <div>
+        <span className="grid size-12 place-items-center rounded-2xl bg-white/[0.05] text-accent-1">
+          <MailCheck className="size-6" />
+        </span>
+        <h1 className="mt-5 text-3xl font-semibold tracking-[-0.035em]">Check your email</h1>
+        <p className="mt-2 text-sm text-muted">
+          We sent a confirmation link to <span className="font-medium text-fg">{sentTo}</span>. Open it to activate your account and sign in.
+        </p>
+        <div className="mt-7 flex flex-col gap-3">
+          <Button onClick={resend} variant="secondary" size="lg" fullWidth>
+            Send the link again
+          </Button>
+          <Button onClick={() => setSentTo(null)} variant="ghost" size="lg" fullWidth>
+            Use a different email
+          </Button>
+        </div>
+        <p className="mt-6 text-center text-sm text-muted">
+          Already confirmed?{" "}
+          <Link href="/login" className="font-medium text-fg hover:text-accent-1">
+            Log in
+          </Link>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
       <h1 className="text-3xl font-semibold tracking-[-0.035em]">Create your account</h1>
       <p className="mt-2 text-sm text-muted">Start your first challenge in under two minutes.</p>
 
-      <Button onClick={google} variant="secondary" size="lg" fullWidth className="mt-7" loading={loading === "google"} iconLeft={loading === "google" ? undefined : <GoogleMark />}>
-        Sign up with Google
-      </Button>
+      <GoogleButton next={HOME_AFTER_LOGIN} label="Sign up with Google" />
+      {alert && <Alert>{alert}</Alert>}
 
       <Divider />
 
@@ -283,8 +492,8 @@ export function SignupForm() {
           </Checkbox>
           {errors.terms && <p role="alert" className="mt-1.5 text-xs text-loss">{errors.terms}</p>}
         </div>
-        <Button type="submit" size="lg" fullWidth loading={loading === "form"} iconRight={loading ? undefined : <ArrowRight className="size-4" />}>
-          {loading === "form" ? "Creating account…" : "Create account"}
+        <Button type="submit" size="lg" fullWidth loading={loading} iconRight={loading ? undefined : <ArrowRight className="size-4" />}>
+          {loading ? "Creating account…" : "Create account"}
         </Button>
       </form>
 
@@ -294,6 +503,98 @@ export function SignupForm() {
           Log in
         </Link>
       </p>
+    </div>
+  );
+}
+
+/* ───────────── Reset password (after the emailed link) ───────────── */
+
+export function ResetPasswordForm() {
+  const router = useRouter();
+  const [step, setStep] = useState<"loading" | "code" | "password" | "no-session">("loading");
+  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    void (async () => {
+      const { data } = await getBrowserSupabase().auth.getSession();
+      if (!data.session) return setStep("no-session");
+      // With 2FA on, Supabase only lets the password change after the code.
+      setStep((await needsSecondFactor().catch(() => false)) ? "code" : "password");
+    })();
+  }, []);
+
+  const submitCode = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!CODE_PATTERN.test(code)) return setError("Enter the 6-digit code from your authenticator app.");
+    setLoading(true);
+    const result = await verifySignInCode(code);
+    setLoading(false);
+    if (!result.ok) {
+      setError(result.message);
+      setCode("");
+      return;
+    }
+    setError(null);
+    setStep("password");
+  };
+
+  const submitPassword = async (e: FormEvent) => {
+    e.preventDefault();
+    if (password.length < 8) return setError("Use at least 8 characters.");
+    setLoading(true);
+    const { error: updateError } = await getBrowserSupabase().auth.updateUser({ password });
+    setLoading(false);
+    if (updateError) return setError(updateError.code === "same_password" ? "Choose a password you haven't used here before." : authErrorMessage(updateError));
+    toast.success("Password updated", "You're signed in with your new password.");
+    await enterDashboard(router, HOME_AFTER_LOGIN);
+  };
+
+  if (step === "loading") return <p className="text-sm text-muted">Checking your link…</p>;
+
+  if (step === "no-session") {
+    return (
+      <div>
+        <h1 className="text-3xl font-semibold tracking-[-0.035em]">Link expired</h1>
+        <p className="mt-2 text-sm text-muted">{AUTH_MESSAGES.linkExpired}</p>
+        <Button onClick={() => router.push("/login")} size="lg" fullWidth className="mt-7">
+          Back to log in
+        </Button>
+      </div>
+    );
+  }
+
+  if (step === "code") {
+    return (
+      <div>
+        <h1 className="text-3xl font-semibold tracking-[-0.035em]">Confirm it’s you</h1>
+        <p className="mt-2 text-sm text-muted">Enter the 6-digit code from your authenticator app to set a new password.</p>
+        <form onSubmit={submitCode} noValidate className="mt-7 space-y-4">
+          <Field label="6-digit code" htmlFor="rp-code" error={error}>
+            <Input id="rp-code" inputMode="numeric" autoComplete="one-time-code" autoFocus placeholder="123 456" value={code} invalid={!!error} icon={<ShieldCheck />} className="num text-lg tracking-[0.3em]" onChange={(e) => { setCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(null); }} />
+          </Field>
+          <Button type="submit" size="lg" fullWidth loading={loading} disabled={!CODE_PATTERN.test(code)}>
+            Continue
+          </Button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h1 className="text-3xl font-semibold tracking-[-0.035em]">Set a new password</h1>
+      <p className="mt-2 text-sm text-muted">Choose a password you don’t use anywhere else.</p>
+      <form onSubmit={submitPassword} noValidate className="mt-7 space-y-4">
+        <Field label="New password" htmlFor="rp-password" error={error}>
+          <PasswordInput id="rp-password" autoComplete="new-password" value={password} invalid={!!error} onChange={(v) => { setPassword(v); setError(null); }} />
+        </Field>
+        <Button type="submit" size="lg" fullWidth loading={loading} iconRight={loading ? undefined : <ArrowRight className="size-4" />}>
+          {loading ? "Saving…" : "Save new password"}
+        </Button>
+      </form>
     </div>
   );
 }

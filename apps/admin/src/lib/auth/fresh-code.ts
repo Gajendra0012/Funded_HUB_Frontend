@@ -10,8 +10,9 @@ export const NO_AUTHENTICATOR = "No authenticator is set up for this account. Si
  * Checks a 6-digit code from the signed-in admin's authenticator app with Supabase (a new challenge,
  * then verify). Used by the 2FA prompt (MFA_REQUIRED, ADM-09) and before every sensitive change (ADM-19).
  *
- * The backend doesn't check yet that a fresh code came before a change (gap G4), so this stops a
- * change from an unattended browser, not a direct API call.
+ * The backend checks it too: sensitive changes (admins, roles, settings, publishing rules) need a code
+ * from the last 5 minutes in the login token, or it answers 403 MFA_REQUIRED and the API helper asks
+ * for a code and sends the call again (backend middleware/auth.ts, requireFreshMfa).
  */
 export async function verifyFreshCode(code: string): Promise<{ ok: true } | { ok: false; message: string }> {
   const mfa = getBrowserSupabase().auth.mfa;

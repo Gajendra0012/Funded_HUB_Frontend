@@ -4,7 +4,8 @@ import { useEffect, useEffectEvent, useRef, useState, type FormEvent } from "rea
 import { useRouter } from "next/navigation";
 import { CodeInput, CopyButton, Stepper } from "@funded-hub/ui";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
-import { groupSecret, loginErrorMessage, loginNotice, nextLoginStep, qrImageSource, type LoginStep } from "@/lib/auth/login-step";
+import { groupSecret, LOGIN_MESSAGES, loginErrorMessage, loginNotice, nextLoginStep, qrImageSource, type LoginStep } from "@/lib/auth/login-step";
+import { isAdminAccount, type SessionClaims } from "@/lib/auth/claims";
 import { Brand } from "./brand";
 
 /*
@@ -59,8 +60,7 @@ export function LoginFlow({ next, reason }: { next: string; reason: string | nul
     });
 
     if (nextStep === "done") {
-      router.replace(next);
-      router.refresh();
+      await finishLogin();
       return;
     }
     if (nextStep === "verify") {
@@ -70,6 +70,28 @@ export function LoginFlow({ next, reason }: { next: string; reason: string | nul
       return;
     }
     await startEnrollment();
+  }
+
+  /**
+   * Password and 2FA are done (aal2). If the token says this isn't an admin account, end the
+   * session here and say so; otherwise go to the requested page. The backend checks again.
+   */
+  async function finishLogin() {
+    const supabase = getBrowserSupabase();
+    const { data } = await supabase.auth.getClaims();
+    const claims = (data?.claims ?? null) as SessionClaims | null;
+    if (claims && !isAdminAccount(claims)) {
+      await supabase.auth.signOut({ scope: "local" });
+      setEnrollment(null);
+      setVerifyFactorId(null);
+      setCode("");
+      setError(LOGIN_MESSAGES.noAccess);
+      setStep("credentials");
+      setBusy(false);
+      return;
+    }
+    router.replace(next);
+    router.refresh();
   }
 
   /** First login: create a new authenticator setup (QR code + key). */
@@ -136,9 +158,8 @@ export function LoginFlow({ next, reason }: { next: string; reason: string | nul
       setBusy(false);
       return;
     }
-    // The session is now "aal2": password and code. Go to the requested page.
-    router.replace(next);
-    router.refresh();
+    // The session is now "aal2": password and code.
+    await finishLogin();
   }
 
   async function useAnotherAccount() {

@@ -26,7 +26,10 @@ export const verifyAdminSession = cache(async (): Promise<AdminSession> => {
   const claims = (data?.claims ?? null) as SessionClaims | null;
   const nowSeconds = Math.floor(Date.now() / 1000);
 
-  if (!claims || sessionState(claims, nowSeconds) !== "active") redirect(LOGIN_PATH);
+  const state = sessionState(claims, nowSeconds);
+  // /login clears a non-admin session (src/proxy.ts) and says why.
+  if (state === "not-admin") redirect(`${LOGIN_PATH}?reason=no-access`);
+  if (!claims || state !== "active") redirect(LOGIN_PATH);
 
   const name = displayName(claims);
   return {

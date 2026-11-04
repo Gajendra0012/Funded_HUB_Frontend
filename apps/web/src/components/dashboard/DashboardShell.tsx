@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
@@ -78,14 +77,9 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
 export function DashboardShell({ children }: { children: ReactNode }) {
   const hydrated = useDemoStore((s) => s.hydrated);
   const session = useDemoStore((s) => s.session);
-  const router = useRouter();
-  const pathname = usePathname();
   const [drawer, setDrawer] = useState(false);
+  // src/proxy.ts only lets signed-in traders in; SessionSync fills `session` from Supabase.
   const ready = hydrated && !!session;
-
-  useEffect(() => {
-    if (hydrated && !session) router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-  }, [hydrated, session, router, pathname]);
 
   return (
     <div className="relative min-h-dvh">

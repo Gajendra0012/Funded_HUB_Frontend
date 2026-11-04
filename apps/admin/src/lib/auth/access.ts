@@ -50,12 +50,14 @@ export function decideAccess(input: {
       const next = new URLSearchParams(input.search).get("next");
       return { action: "redirect", location: safeNextPath(next), signOut: false };
     }
-    // Too old: clear it and show the login form. Half-done sign-in ("needs-2fa"): the form resumes at the code.
-    return { action: "allow", signOut: state === "expired" };
+    // Too old, or not an admin account: clear it and show the login form.
+    // Half-done sign-in ("needs-2fa"): the form resumes at the code.
+    return { action: "allow", signOut: state === "expired" || state === "not-admin" };
   }
 
   if (state === "active") return { action: "allow", signOut: false };
   if (state === "expired") return { action: "redirect", location: `${LOGIN_PATH}?reason=expired`, signOut: true };
+  if (state === "not-admin") return { action: "redirect", location: `${LOGIN_PATH}?reason=no-access`, signOut: true };
 
   // Signed out, or the 2FA code is still missing: log in, then come back here.
   const next = new URLSearchParams({ next: input.pathname + input.search });

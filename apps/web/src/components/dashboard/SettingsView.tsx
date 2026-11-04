@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   BadgeCheck,
@@ -28,8 +28,8 @@ import { Switch } from "@/components/ui/Toggle";
 import { WalletIcon } from "@/components/wallet/ConnectWalletModal";
 import { brand } from "@/config/brand";
 import { COUNTRIES, flag } from "@/data/countries";
+import { CODE_PATTERN, disableTwoFactor, groupSecret, startEnrollment, verifiedFactorId, verifyCode } from "@/lib/auth/mfa";
 import { cn } from "@/lib/cn";
-import { createRng } from "@/lib/rng";
 import { useDemoStore } from "@/lib/store";
 import { toast } from "@/lib/toast";
 import { networkName, useWalletStore } from "@/lib/wallet";
@@ -160,56 +160,59 @@ function NotificationsCard() {
   );
 }
 
-/* ───────────── Security / 2FA ───────────── */
+/* ───────────── Security / 2FA (Supabase Auth TOTP, WEB-11) ───────────── */
 
-function Finder({ x, y }: { x: number; y: number }) {
+function CodeField({ id, code, setCode, error, setError }: { id: string; code: string; setCode: (v: string) => void; error: string | null; setError: (v: string | null) => void }) {
   return (
-    <g>
-      <rect x={x} y={y} width={7} height={7} fill="#05070d" />
-      <rect x={x + 1} y={y + 1} width={5} height={5} fill="#fff" />
-      <rect x={x + 2} y={y + 2} width={3} height={3} fill="#05070d" />
-    </g>
+    <Field label="6-digit code" htmlFor={id} error={error}>
+      <Input
+        id={id}
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        placeholder="123 456"
+        value={code}
+        invalid={!!error}
+        className="num text-lg tracking-[0.3em]"
+        onChange={(e) => {
+          setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+          setError(null);
+        }}
+      />
+    </Field>
   );
 }
 
-const QR_SIZE = 25;
-
-function qrCells(seed: string): [number, number][] {
-  const n = QR_SIZE;
-  const rng = createRng(`qr-${seed}`);
-  const cells: [number, number][] = [];
-  const inFinder = (x: number, y: number) => (x < 7 && y < 7) || (x >= n - 7 && y < 7) || (x < 7 && y >= n - 7);
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (!inFinder(x, y) && rng.chance(0.47)) cells.push([x, y]);
-  return cells;
-}
-
-/** Decorative authenticator QR (seeded, not scannable). */
-function FakeQr({ seed }: { seed: string }) {
-  const n = QR_SIZE;
-  const cells = qrCells(seed);
-  return (
-    <svg viewBox={`-2 -2 ${n + 4} ${n + 4}`} className="size-44 rounded-xl bg-white p-1" role="img" aria-label="Authenticator QR code (demo)">
-      {cells.map(([x, y]) => (
-        <rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill="#05070d" />
-      ))}
-      <Finder x={0} y={0} />
-      <Finder x={n - 7} y={0} />
-      <Finder x={0} y={n - 7} />
-    </svg>
-  );
-}
-
-function TwoFactorSetup({ email, onDone }: { email: string; onDone: () => void }) {
+/** Turning 2FA on: a real authenticator setup from Supabase (QR code + key), confirmed with a code. */
+function TwoFactorSetup({ onDone }: { onDone: () => void }) {
+  const [setup, setSetup] = useState<{ factorId: string; qr: string; secret: string } | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const secret = "NVED GE4X 7KQM 2PLA";
+  const [busy, setBusy] = useState(false);
+
+  // One setup per opening of the dialog (the dialog remounts this with a new key each time).
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    void startEnrollment().then((result) => (result.ok ? setSetup(result) : setError(result.message)));
+  }, []);
+
+  if (!setup) {
+    return error ? <p role="alert" className="text-sm text-loss">{error}</p> : <p className="flex items-center gap-2 text-sm text-muted"><Loader2 className="size-4 animate-spin" /> Preparing your setup…</p>;
+  }
+
   return (
     <form
       noValidate
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
-        if (!/^\d{6}$/.test(code)) {
-          setError("Enter the 6-digit code from your authenticator app.");
+        if (!CODE_PATTERN.test(code)) return setError("Enter the 6-digit code from your authenticator app.");
+        setBusy(true);
+        const result = await verifyCode(setup.factorId, code);
+        setBusy(false);
+        if (!result.ok) {
+          setError(result.message);
+          setCode("");
           return;
         }
         useDemoStore.getState().updateSettings({ twoFactor: true });
@@ -219,7 +222,9 @@ function TwoFactorSetup({ email, onDone }: { email: string; onDone: () => void }
       className="space-y-5"
     >
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-        <FakeQr seed={email} />
+        {/* A data: image can't use next/image; it's a small generated SVG. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={setup.qr} alt="QR code to add Funded HUB to your authenticator app" width={176} height={176} className="size-44 rounded-xl bg-white p-1" />
         <div className="space-y-3 text-sm text-muted">
           <p>
             <span className="font-semibold text-fg">1.</span> Scan the code with Google Authenticator, 1Password or Authy.
@@ -228,28 +233,48 @@ function TwoFactorSetup({ email, onDone }: { email: string; onDone: () => void }
             <span className="font-semibold text-fg">2.</span> Or enter this key manually:
           </p>
           <div className="flex items-center gap-1 rounded-xl border border-line bg-[#080c15] py-1 pl-3 pr-1">
-            <span className="num flex-1 text-[13px] text-fg">{secret}</span>
-            <CopyButton value={secret.replace(/\s/g, "")} label="Copy setup key" toastLabel="Setup key copied" />
+            <span className="num flex-1 break-all text-[13px] text-fg">{groupSecret(setup.secret)}</span>
+            <CopyButton value={setup.secret} label="Copy setup key" toastLabel="Setup key copied" />
           </div>
         </div>
       </div>
-      <Field label="6-digit code" htmlFor="tfa-code" error={error} hint="Any 6 digits work in this demo.">
-        <Input
-          id="tfa-code"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          placeholder="123 456"
-          value={code}
-          invalid={!!error}
-          className="num text-lg tracking-[0.3em]"
-          onChange={(e) => {
-            setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
-            setError(null);
-          }}
-        />
-      </Field>
-      <Button type="submit" fullWidth size="lg" iconLeft={<ShieldCheck className="size-4" />}>
+      <CodeField id="tfa-code" code={code} setCode={setCode} error={error} setError={setError} />
+      <Button type="submit" fullWidth size="lg" loading={busy} disabled={!CODE_PATTERN.test(code)} iconLeft={busy ? undefined : <ShieldCheck className="size-4" />}>
         Enable 2FA
+      </Button>
+    </form>
+  );
+}
+
+/** Turning 2FA off: needs a current code (Supabase requires a fresh 2FA check to remove it). */
+function TwoFactorDisable({ onDone }: { onDone: () => void }) {
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  return (
+    <form
+      noValidate
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!CODE_PATTERN.test(code)) return setError("Enter the 6-digit code from your authenticator app.");
+        setBusy(true);
+        const result = await disableTwoFactor(code);
+        setBusy(false);
+        if (!result.ok) {
+          setError(result.message);
+          setCode("");
+          return;
+        }
+        useDemoStore.getState().updateSettings({ twoFactor: false });
+        toast.warning("Two-factor authentication disabled", "We recommend keeping 2FA on for payouts.");
+        onDone();
+      }}
+      className="space-y-5"
+    >
+      <p className="text-sm text-muted">Enter a code from your authenticator app to confirm. Sign-ins will then only need your password or Google.</p>
+      <CodeField id="tfa-off-code" code={code} setCode={setCode} error={error} setError={setError} />
+      <Button type="submit" variant="secondary" fullWidth size="lg" loading={busy} disabled={!CODE_PATTERN.test(code)}>
+        Turn off 2FA
       </Button>
     </form>
   );
@@ -257,8 +282,14 @@ function TwoFactorSetup({ email, onDone }: { email: string; onDone: () => void }
 
 function SecurityCard() {
   const twoFactor = useDemoStore((s) => s.settings.twoFactor);
-  const email = useDemoStore((s) => s.session?.email ?? "trader@example.com");
-  const [modal, setModal] = useState({ open: false, key: 0 });
+  const [modal, setModal] = useState<{ open: false | "enable" | "disable"; key: number }>({ open: false, key: 0 });
+
+  // The real 2FA status comes from Supabase; the store keeps a copy for the rest of the dashboard.
+  useEffect(() => {
+    void verifiedFactorId()
+      .then((id) => useDemoStore.getState().updateSettings({ twoFactor: id !== null }))
+      .catch(() => undefined);
+  }, []);
   const [sessions, setSessions] = useState([
     { id: "s1", icon: Monitor, name: "Windows · Edge", where: "London, UK", when: "Active now", current: true },
     { id: "s2", icon: Smartphone, name: "iPhone 16 · Safari", where: "Dubai, AE", when: "2 hours ago", current: false },
@@ -275,13 +306,7 @@ function SecurityCard() {
         <Switch
           checked={twoFactor}
           label="Two-factor authentication"
-          onChange={(v) => {
-            if (v) setModal((m) => ({ open: true, key: m.key + 1 }));
-            else {
-              useDemoStore.getState().updateSettings({ twoFactor: false });
-              toast.warning("Two-factor authentication disabled", "We recommend keeping 2FA on for payouts.");
-            }
-          }}
+          onChange={(v) => setModal((m) => ({ open: v ? "enable" : "disable", key: m.key + 1 }))}
         />
       </div>
 
@@ -327,13 +352,21 @@ function SecurityCard() {
       </ul>
 
       <Modal
-        open={modal.open}
+        open={modal.open === "enable"}
         onClose={() => setModal((m) => ({ ...m, open: false }))}
         title="Set up two-factor authentication"
         description="Add Funded HUB to your authenticator app."
         size="md"
       >
-        <TwoFactorSetup key={modal.key} email={email} onDone={() => setModal((m) => ({ ...m, open: false }))} />
+        <TwoFactorSetup key={modal.key} onDone={() => setModal((m) => ({ ...m, open: false }))} />
+      </Modal>
+      <Modal
+        open={modal.open === "disable"}
+        onClose={() => setModal((m) => ({ ...m, open: false }))}
+        title="Turn off two-factor authentication"
+        size="md"
+      >
+        <TwoFactorDisable key={modal.key} onDone={() => setModal((m) => ({ ...m, open: false }))} />
       </Modal>
     </Card>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { signOutToLogin } from "@/lib/auth/sign-out";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -176,9 +177,7 @@ function UserMenu() {
                 className={cn(item, "text-loss hover:text-loss")}
                 onClick={() => {
                   close();
-                  useDemoStore.getState().logout();
-                  toast.info("Signed out", "See you next session.");
-                  router.push("/login");
+                  void signOutToLogin(router).then(() => toast.info("Signed out", "See you next session."));
                 }}
               >
                 <LogOut className="size-4" /> Log out

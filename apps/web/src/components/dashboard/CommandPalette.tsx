@@ -1,5 +1,6 @@
 "use client";
 
+import { signOutToLogin } from "@/lib/auth/sign-out";
 import { useEffect, useRef, useState, useSyncExternalStore, type ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
@@ -155,8 +156,7 @@ export function CommandPalette() {
       label: "Log out",
       icon: LogOut,
       run: () => {
-        useDemoStore.getState().logout();
-        router.push("/login");
+        void signOutToLogin(router);
       },
     },
     ...accounts.map((a) => ({

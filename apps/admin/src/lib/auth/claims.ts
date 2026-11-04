@@ -18,6 +18,14 @@ export type SessionClaims = {
   amr?: Array<{ method: string; timestamp?: number } | string>;
   /** Profile fields the user can change themselves: only for display, never for access decisions. */
   user_metadata?: Record<string, unknown>;
+  /**
+   * Set by the backend's Custom Access Token hook (public.admin_access_token_claims): whether this
+   * account is an active admin, and its permission codes. Absent when the hook isn't enabled; then
+   * the backend's check on the first API call decides. Refreshed with the token (about hourly), so
+   * it only steers the UI; the backend checks the tables on every call.
+   */
+  is_admin?: boolean;
+  admin_permissions?: string[];
 };
 
 export type SessionState =
@@ -27,8 +35,15 @@ export type SessionState =
   | "needs-2fa"
   /** Older than 12 hours, or the sign-in time can't be read (fail safe). */
   | "expired"
+  /** Signed in with password and 2FA, within 12 hours, but the token says this is not an admin account. */
+  | "not-admin"
   /** Signed in with password and 2FA, within 12 hours. */
   | "active";
+
+/** False only when the token explicitly says "not an admin"; a token without the claim is left to the backend. */
+export function isAdminAccount(claims: SessionClaims): boolean {
+  return claims.is_admin !== false;
+}
 
 /**
  * When this session signed in (seconds since 1970), from the token's `amr` list:
@@ -54,7 +69,8 @@ export function sessionState(claims: SessionClaims | null, nowSeconds: number): 
   if (!claims) return "signed-out";
   const expiresAt = sessionExpiresAt(claims);
   if (expiresAt === null || nowSeconds >= expiresAt) return "expired";
-  return claims.aal === "aal2" ? "active" : "needs-2fa";
+  if (claims.aal !== "aal2") return "needs-2fa";
+  return isAdminAccount(claims) ? "active" : "not-admin";
 }
 
 /** "Local Admin" from the profile name, or the email if there's no name. */
